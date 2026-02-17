@@ -539,28 +539,12 @@
     });
 </script>
 
-<script type="module">
-    import createModule from './mupen64plus_next_libretro.js';
-    
-    createModule(window.Module).then((instance) => {
-        // Sync the instance back to the window.Module
-        Object.assign(window.Module, instance);
-        console.log("WebAssembly Module Loaded Successfully");
-    }).catch(err => {
-        console.error("Critical Load Error:", err);
-    });
+<script src="mupen64plus_next_libretro.js"></script>
+<script>
+    // Wait for the module to initialize
+    Module.onRuntimeInitialized = function() {
+        console.log("N64 Core Initialized");
+    };
 </script>
-
-<script type="module">
-  import createModule from './mupen64plus_next_libretro.js';
-  
-  
-  createModule(Module).then((instance) => {
-  
-    window.Module = instance;
-    console.log("N64 Core Initialized");
-  });
-</script>
-
 </body>
 </html>
