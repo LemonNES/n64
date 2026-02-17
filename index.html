@@ -10,12 +10,12 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0a;
+      --bg: #000000;
       --fg: #e4e4e4;
-      --muted: rgba(228,228,228,0.3);
+      --muted: rgba(228,228,228,0.28);
       --surface: rgba(255,255,255,0.04);
       --border: rgba(255,255,255,0.07);
-      --accent: #c8f560;           /* sharp lime — one accent, used sparingly */
+      --accent: #c8f560;
       --accent-dim: rgba(200,245,96,0.12);
       --btn-glow: rgba(200,245,96,0.25);
       --radius-sm: 6px;
@@ -27,7 +27,7 @@
     html, body {
       width: 100vw; height: 100dvh;
       overflow: hidden;
-      background: var(--bg);
+      background: #000;
       color: var(--fg);
       font-family: 'DM Sans', sans-serif;
       touch-action: none;
@@ -38,29 +38,19 @@
     /* ─── LAYOUT ──────────────────────────────────── */
     body {
       display: grid;
-      grid-template-rows: auto 1fr auto;
-      grid-template-areas: "topbar" "screen" "controls";
+      grid-template-rows: 1fr auto;
+      grid-template-areas: "screen" "controls";
     }
 
-    /* ─── TOP BAR ─────────────────────────────────── */
+    /* ─── FLOATING TOP ACTIONS ────────────────────── */
     #topbar {
-      grid-area: topbar;
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      right: 12px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px 10px;
-      gap: 10px;
+      gap: 8px;
       z-index: 10;
     }
-
-    .wordmark {
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-    .wordmark span { color: var(--accent); }
 
     .bar-actions { display: flex; gap: 8px; }
 
@@ -92,7 +82,7 @@
     .canvas-wrap {
       position: relative;
       aspect-ratio: 4/3;
-      width: min(90vw, calc((100dvh - 220px) * 4/3));
+      width: min(92vw, calc((100dvh - 250px) * 4 / 3));
       background: #000;
       border-radius: var(--radius-md);
       overflow: hidden;
@@ -139,14 +129,11 @@
     #controls {
       grid-area: controls;
       position: relative;
-      height: 180px;
+      height: 200px;
       width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
       flex-shrink: 0;
-      padding: 0 12px 12px;
-      /* safe area */
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      overflow: hidden;
     }
 
     /* generic touch button base */
@@ -174,32 +161,98 @@
       transform: scale(0.91);
     }
 
-    /* D-PAD */
-    .dpad { position: absolute; left: 16px; top: 8px; }
+    /* ── SHOULDER STRIP ── top edge, L left R right */
+    .sh {
+      width: 76px; height: 26px;
+      border-radius: 4px 4px var(--radius-sm) var(--radius-sm);
+      font-size: 10px; letter-spacing: 0.08em;
+      top: 0;
+    }
+    #tb-L { left: 12px; }
+    #tb-R { right: 12px; }
 
+    /* ── Z TRIGGER ── center-top between L and R */
+    #tb-Z {
+      position: absolute;
+      left: 50%; top: 0;
+      transform: translateX(-50%);
+      width: 44px; height: 26px;
+      border-radius: 13px;
+      font-size: 9px; letter-spacing: 0.1em;
+    }
+    #tb-Z.pressed { transform: translateX(-50%) scale(0.91); }
+
+    /* ── JOYSTICK ── left side, large circular zone */
+    /* The joystick is a 4-direction touch area with a visual circle */
+    .joystick {
+      position: absolute;
+      left: 12px;
+      top: 34px;
+      width: 110px; height: 110px;
+    }
+    /* Outer ring */
+    .joystick-ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      pointer-events: none;
+    }
+    /* Inner nub */
+    .joystick-nub {
+      position: absolute;
+      width: 36px; height: 36px;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      pointer-events: none;
+      transition: transform 0.06s;
+    }
+    /* 4 invisible tap zones inside the joystick */
+    .jz {
+      position: absolute;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+    }
+    .jz.up    { top: 0;    left: 20%;  width: 60%; height: 50%; }
+    .jz.down  { bottom: 0; left: 20%;  width: 60%; height: 50%; }
+    .jz.left  { top: 20%;  left: 0;    width: 50%; height: 60%; }
+    .jz.right { top: 20%;  right: 0;   width: 50%; height: 60%; }
+    /* nub shift on press */
+    .joystick.pressed-up    .joystick-nub { transform: translate(-50%, calc(-50% - 8px)); }
+    .joystick.pressed-down  .joystick-nub { transform: translate(-50%, calc(-50% + 8px)); }
+    .joystick.pressed-left  .joystick-nub { transform: translate(calc(-50% - 8px), -50%); }
+    .joystick.pressed-right .joystick-nub { transform: translate(calc(-50% + 8px), -50%); }
+
+    /* ── D-PAD ── lower-left, N64 real dpad position */
+    .dpad {
+      position: absolute;
+      left: 12px; bottom: max(14px, env(safe-area-inset-bottom));
+      width: 108px; height: 108px;
+    }
     .dp {
       position: absolute;
-      width: 44px; height: 44px;
+      width: 36px; height: 36px;
     }
     .dp-center {
-      width: 44px; height: 44px;
+      width: 36px; height: 36px;
       position: absolute;
-      top: 44px; left: 44px;
+      top: 36px; left: 36px;
       background: rgba(255,255,255,0.02);
       border: 1px solid var(--border);
       pointer-events: none;
     }
-    /* dpad arm positions */
-    .dp.up    { top: 0;    left: 44px; border-radius: var(--radius-sm) var(--radius-sm) 2px 2px; }
-    .dp.down  { top: 88px; left: 44px; border-radius: 2px 2px var(--radius-sm) var(--radius-sm); }
-    .dp.left  { top: 44px; left: 0;    border-radius: var(--radius-sm) 2px 2px var(--radius-sm); }
-    .dp.right { top: 44px; left: 88px; border-radius: 2px var(--radius-sm) var(--radius-sm) 2px; }
-
-    /* chevron arrows */
+    .dp.up    { top: 0;    left: 36px; border-radius: var(--radius-sm) var(--radius-sm) 2px 2px; }
+    .dp.down  { top: 72px; left: 36px; border-radius: 2px 2px var(--radius-sm) var(--radius-sm); }
+    .dp.left  { top: 36px; left: 0;    border-radius: var(--radius-sm) 2px 2px var(--radius-sm); }
+    .dp.right { top: 36px; left: 72px; border-radius: 2px var(--radius-sm) var(--radius-sm) 2px; }
     .dp::after {
       content: '';
       display: block;
-      width: 8px; height: 8px;
+      width: 7px; height: 7px;
       border-right: 2px solid currentColor;
       border-bottom: 2px solid currentColor;
       opacity: 0.5;
@@ -210,142 +263,81 @@
     .dp.right::after { transform: rotate(-45deg) translate(-1px, -1px); }
     .dp.pressed::after { opacity: 1; }
 
-    /* CENTER BUTTONS (select / start) */
-    .cbtns {
+    /* ── START ── center bottom */
+    #tb-START {
       position: absolute;
-      left: 50%; top: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      gap: 10px;
-    }
-    .cb {
-      width: 56px; height: 22px;
-      border-radius: 11px;
-      font-size: 9px;
-      letter-spacing: 0.1em;
-    }
-
-    /* ACTION BUTTONS – diamond layout */
-    .abtns {
-      position: absolute; right: 16px; top: 8px;
-      width: 132px; height: 132px;
-    }
-    .ab {
-      position: absolute;
-      width: 48px; height: 48px;
-      border-radius: 50%;
-      font-size: 12px;
-      font-weight: 500;
-    }
-    /* diamond positions: A right, B bottom, X top, Y left */
-    .ab.a { top: 42px; right: 0;   }
-    .ab.b { bottom: 0; left: 42px; }
-    .ab.x { top: 0;    left: 42px; }
-    .ab.y { top: 42px; left: 0;    }
-
-    /* subtle per-button accent tint on press */
-    .ab.a.pressed { --accent: #ff6b6b; --accent-dim: rgba(255,107,107,0.12); --btn-glow: rgba(255,107,107,0.25); }
-    .ab.b.pressed { --accent: #ffd93d; --accent-dim: rgba(255,217,61,0.12);  --btn-glow: rgba(255,217,61,0.25);  }
-    .ab.x.pressed { --accent: #6bcbff; --accent-dim: rgba(107,203,255,0.12); --btn-glow: rgba(107,203,255,0.25); }
-    .ab.y.pressed { --accent: #6bff9e; --accent-dim: rgba(107,255,158,0.12); --btn-glow: rgba(107,255,158,0.25); }
-
-    /* SHOULDER BUTTONS */
-    .shoulders {
-      position: absolute;
-      left: 0; right: 0; bottom: -4px;
-      /* sits below d-pad/ab pad */
-      display: flex;
-      justify-content: space-between;
-      padding: 0 16px;
-    }
-    .sh {
-      width: 88px; height: 26px;
-      border-radius: 4px 4px var(--radius-sm) var(--radius-sm);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-    }
-
-    /* ─── Z BUTTON ─────────────────────────────────── */
-    /* N64 has a Z trigger - map to a small btn in center */
-    .zbtn {
-      position: absolute;
-      left: 50%; top: calc(50% - 36px);
+      left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
       transform: translateX(-50%);
-      width: 36px; height: 18px;
-      border-radius: 9px;
-      font-size: 9px;
-      letter-spacing: 0.1em;
+      width: 64px; height: 24px;
+      border-radius: 12px;
+      font-size: 9px; letter-spacing: 0.12em;
     }
+    #tb-START.pressed { transform: translateX(-50%) scale(0.91); }
 
-    /* ─── ANALOG STUB (visual only) ───────────────── */
-    /* Not mappable to keyboard in a meaningful way for most games,
-       but shown visually for completeness */
-    .analog-hint {
-      position: absolute;
-      left: 148px; top: 20px;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.02);
-      border: 1px dashed rgba(255,255,255,0.06);
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'DM Mono', monospace;
-      font-size: 8px;
-      color: rgba(255,255,255,0.1);
-      pointer-events: none;
-    }
-
-    /* ─── C BUTTONS (N64 specific) ────────────────── */
+    /* ── C BUTTONS ── right-center, N64 gold tint */
     .cpad {
       position: absolute;
-      right: 160px; top: 8px;
-      width: 90px; height: 90px;
+      right: 116px; top: 34px;
+      width: 86px; height: 86px;
     }
     .cp {
       position: absolute;
-      width: 28px; height: 28px;
+      width: 26px; height: 26px;
       border-radius: 50%;
-      font-size: 10px;
       color: #c8a840;
-      border-color: rgba(200,168,64,0.15);
+      border-color: rgba(200,168,64,0.18) !important;
     }
-    .cp.up    { top: 0;    left: 31px; }
-    .cp.down  { bottom: 0; left: 31px; }
-    .cp.left  { top: 31px; left: 0; }
-    .cp.right { top: 31px; right: 0; }
+    .cp.up    { top: 0;    left: 30px; }
+    .cp.down  { bottom: 0; left: 30px; }
+    .cp.left  { top: 30px; left: 0; }
+    .cp.right { top: 30px; right: 0; }
     .cp.pressed {
       background: rgba(200,168,64,0.15);
-      border-color: #c8a840;
+      border-color: #c8a840 !important;
       box-shadow: 0 0 8px rgba(200,168,64,0.3);
-      color: #c8a840;
       transform: scale(0.91);
     }
-    /* C label */
     .cp::before {
       content: 'C';
       position: absolute;
-      font-size: 7px;
-      font-family: 'DM Mono', monospace;
-      opacity: 0.5;
-      top: 1px; left: 50%; transform: translateX(-50%);
+      font-size: 6px; font-family: 'DM Mono', monospace;
+      opacity: 0.4; top: 1px; left: 50%; transform: translateX(-50%);
     }
     .cp::after {
       content: '';
       display: block;
-      width: 6px; height: 6px;
+      width: 5px; height: 5px;
       border-right: 1.5px solid currentColor;
       border-bottom: 1.5px solid currentColor;
-      position: absolute;
-      top: 50%; left: 50%;
+      position: absolute; top: 50%; left: 50%;
     }
     .cp.up::after    { transform: translate(-50%, -30%) rotate(-135deg); }
     .cp.down::after  { transform: translate(-50%, -70%) rotate(45deg); }
     .cp.left::after  { transform: translate(-30%, -50%) rotate(135deg); }
     .cp.right::after { transform: translate(-70%, -50%) rotate(-45deg); }
 
+    /* ── A / B BUTTONS ── right side, N64 style */
+    /* A is large, B is medium, no X/Y */
+    .abtns {
+      position: absolute;
+      right: 12px; top: 34px;
+      width: 100px; height: 110px;
+    }
+    .ab {
+      position: absolute;
+      border-radius: 50%;
+      font-size: 13px; font-weight: 500;
+    }
+    /* A: large, centre-right. B: smaller, lower-left */
+    .ab.a { width: 56px; height: 56px; top: 28px; right: 0; }
+    .ab.b { width: 44px; height: 44px; bottom: 0; left: 0; }
+    .ab.a.pressed { --accent: #ff6b6b; --accent-dim: rgba(255,107,107,0.12); --btn-glow: rgba(255,107,107,0.25); }
+    .ab.b.pressed { --accent: #ffd93d; --accent-dim: rgba(255,217,61,0.12);  --btn-glow: rgba(255,217,61,0.25); }
+
     /* ─── SETTINGS PANEL ──────────────────────────── */
     #panel {
       position: fixed; inset: 0;
-      background: rgba(10,10,10,0.9);
+      background: rgba(0,0,0,0.92);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       z-index: 100;
@@ -357,7 +349,7 @@
 
     .panel-sheet {
       width: 100%; max-width: 520px;
-      background: #111;
+      background: #000;
       border: 1px solid var(--border);
       border-bottom: none;
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -461,24 +453,52 @@
 
     /* ─── LANDSCAPE ADJUSTMENTS ───────────────────── */
     @media (orientation: landscape) {
-      body { grid-template-rows: auto 1fr; grid-template-areas: "topbar" "main"; }
-      #screen-area { display: none; } /* canvas is shown in main area */
-
-      /* In landscape, overlay controls on sides */
-      #controls {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        height: 160px;
+      body {
+        grid-template-columns: 200px 1fr 200px;
+        grid-template-rows: 1fr;
+        grid-template-areas: "controls screen controls2";
+      }
+      /* Use pseudo-element trick: duplicate controls on right not supported,
+         instead use a simpler approach: controls on left+right as overlays */
+      body {
+        display: flex;
+        flex-direction: row;
+      }
+      #topbar { display: none; }
+      #screen-area {
+        flex: 1 1 auto;
+        order: 2;
+        padding: 6px;
       }
       .canvas-wrap {
-        position: fixed;
-        top: 50px; left: 0; right: 0;
-        bottom: 150px;
-        width: auto;
-        aspect-ratio: unset;
-        height: auto;
-        border-radius: 0;
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 4/3;
+        max-height: 100%;
+        max-width: calc(100dvh * 4/3);
       }
+      #controls {
+        flex: 0 0 190px;
+        height: 100dvh;
+        order: 1;
+        padding: 8px 6px;
+        padding-top: max(8px, env(safe-area-inset-top));
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        padding-left: max(6px, env(safe-area-inset-left));
+      }
+      /* In landscape, reposition all elements for a side-panel layout */
+      .dpad {
+        left: 10px; top: 50%;
+        transform: translateY(-50%);
+      }
+      .sh { width: 70px; height: 24px; }
+      #tb-L { left: 10px; top: 4px; }
+      #tb-R { right: 10px; top: 4px; }
+      .zbtn { top: 4px; }
+      /* Move action buttons, C buttons, start to right panel via a second controls div */
+      .abtns { right: 8px; }
+      .cpad { right: 144px; }
+      .cbtns { bottom: max(12px, env(safe-area-inset-bottom)); left: 50%; }
     }
 
     /* ─── DESKTOP ──────────────────────────────────── */
@@ -490,33 +510,27 @@
 </head>
 <body>
 
-<!-- TOP BAR -->
-<header id="topbar">
-  <div class="wordmark">Lemon<span>N64</span></div>
-  <div class="bar-actions">
-    <label class="icon-btn" for="romInput" title="Load ROM">
-      <!-- folder icon -->
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-      </svg>
-    </label>
-    <input type="file" id="romInput" accept=".z64,.n64,.v64,.zip,application/octet-stream">
+<!-- FLOATING ACTIONS (top-right) -->
+<div id="topbar">
+  <label class="icon-btn" for="romInput" title="Load ROM">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+    </svg>
+  </label>
+  <input type="file" id="romInput" accept=".z64,.n64,.v64,.zip,application/octet-stream">
 
-    <div class="icon-btn" id="btnSave" title="Save State">
-      <!-- save icon -->
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-      </svg>
-    </div>
-
-    <div class="icon-btn" id="btnSettings" title="Settings">
-      <!-- sliders icon -->
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-      </svg>
-    </div>
+  <div class="icon-btn" id="btnSave" title="Save State">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+    </svg>
   </div>
-</header>
+
+  <div class="icon-btn" id="btnSettings" title="Settings">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+    </svg>
+  </div>
+</div>
 
 <!-- SCREEN -->
 <div id="screen-area">
@@ -535,28 +549,36 @@
 <!-- TOUCH CONTROLS -->
 <div id="controls">
 
-  <!-- Left shoulder -->
-  <div class="shoulders" style="top:0; bottom:auto; padding:0 16px;">
-    <div class="tb sh" id="tb-L" data-action="L">L</div>
-    <div class="tb sh" id="tb-R" data-action="R">R</div>
+  <!-- Shoulder buttons -->
+  <div class="tb sh" id="tb-L" data-action="L">L</div>
+  <div class="tb sh" id="tb-R" data-action="R">R</div>
+
+  <!-- Z trigger -->
+  <div class="tb" id="tb-Z" data-action="Z">Z</div>
+
+  <!-- Joystick (left, primary movement) -->
+  <div class="joystick" id="joystick">
+    <div class="joystick-ring"></div>
+    <div class="joystick-nub"></div>
+    <div class="tb jz up"    id="tb-JU"    data-action="UP"></div>
+    <div class="tb jz down"  id="tb-JD"    data-action="DOWN"></div>
+    <div class="tb jz left"  id="tb-JL"    data-action="LEFT"></div>
+    <div class="tb jz right" id="tb-JR"    data-action="RIGHT"></div>
   </div>
 
-  <!-- Z button -->
-  <div class="tb zbtn" id="tb-Z" data-action="Z">Z</div>
-
-  <!-- D-Pad container -->
+  <!-- D-Pad (lower-left, secondary) -->
   <div class="dpad">
-    <div class="tb dp up"    id="tb-UP"    data-action="UP"></div>
-    <div class="tb dp down"  id="tb-DOWN"  data-action="DOWN"></div>
-    <div class="tb dp left"  id="tb-LEFT"  data-action="LEFT"></div>
-    <div class="tb dp right" id="tb-RIGHT" data-action="RIGHT"></div>
+    <div class="tb dp up"    id="tb-DU"    data-action="UP"></div>
+    <div class="tb dp down"  id="tb-DD"    data-action="DOWN"></div>
+    <div class="tb dp left"  id="tb-DL"    data-action="LEFT"></div>
+    <div class="tb dp right" id="tb-DR"    data-action="RIGHT"></div>
     <div class="dp-center"></div>
   </div>
 
-  <!-- Analog stick hint -->
-  <div class="analog-hint">stick</div>
+  <!-- Start button -->
+  <div class="tb" id="tb-START" data-action="START">START</div>
 
-  <!-- C Buttons -->
+  <!-- C Buttons (right-centre, gold) -->
   <div class="cpad">
     <div class="tb cp up"    id="tb-CU" data-action="CU"></div>
     <div class="tb cp down"  id="tb-CD" data-action="CD"></div>
@@ -564,18 +586,10 @@
     <div class="tb cp right" id="tb-CR" data-action="CR"></div>
   </div>
 
-  <!-- Select / Start -->
-  <div class="cbtns">
-    <div class="tb cb" id="tb-SELECT" data-action="SELECT">SELECT</div>
-    <div class="tb cb" id="tb-START"  data-action="START">START</div>
-  </div>
-
-  <!-- Action buttons (A B X Y) -->
+  <!-- A and B buttons only (no X/Y on N64) -->
   <div class="abtns">
     <div class="tb ab a" id="tb-A" data-action="A">A</div>
     <div class="tb ab b" id="tb-B" data-action="B">B</div>
-    <div class="tb ab x" id="tb-X" data-action="X">X</div>
-    <div class="tb ab y" id="tb-Y" data-action="Y">Y</div>
   </div>
 
 </div>
@@ -604,14 +618,13 @@
       </div>
     </div>
     <table class="keytable">
-      <tr><td>D-Pad</td><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Arrow Keys</td></tr>
+      <tr><td>Stick/D-Pad</td><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Arrow Keys</td></tr>
       <tr><td>A</td><td><kbd>X</kbd></td><td>Primary</td></tr>
       <tr><td>B</td><td><kbd>Z</kbd></td><td>Secondary</td></tr>
       <tr><td>C ↑↓←→</td><td><kbd>I</kbd> <kbd>K</kbd> <kbd>J</kbd> <kbd>L</kbd></td><td>C Buttons</td></tr>
       <tr><td>L / R</td><td><kbd>Q</kbd> / <kbd>W</kbd></td><td>Shoulders</td></tr>
       <tr><td>Z</td><td><kbd>E</kbd></td><td>Z Trigger</td></tr>
       <tr><td>Start</td><td><kbd>Enter</kbd></td><td></td></tr>
-      <tr><td>Select</td><td><kbd>Shift</kbd></td><td></td></tr>
     </table>
 
     <div class="btn-row">
@@ -631,23 +644,20 @@
 
 // Action → { key, keyCode, code }
 const BINDINGS = {
-  UP:     { key: 'ArrowUp',    keyCode: 38, code: 'ArrowUp'    },
-  DOWN:   { key: 'ArrowDown',  keyCode: 40, code: 'ArrowDown'  },
-  LEFT:   { key: 'ArrowLeft',  keyCode: 37, code: 'ArrowLeft'  },
-  RIGHT:  { key: 'ArrowRight', keyCode: 39, code: 'ArrowRight' },
-  A:      { key: 'x',          keyCode: 88, code: 'KeyX'       },
-  B:      { key: 'z',          keyCode: 90, code: 'KeyZ'       },
-  X:      { key: 's',          keyCode: 83, code: 'KeyS'       },
-  Y:      { key: 'a',          keyCode: 65, code: 'KeyA'       },
-  L:      { key: 'q',          keyCode: 81, code: 'KeyQ'       },
-  R:      { key: 'w',          keyCode: 87, code: 'KeyW'       },
-  Z:      { key: 'e',          keyCode: 69, code: 'KeyE'       },
-  START:  { key: 'Enter',      keyCode: 13, code: 'Enter'      },
-  SELECT: { key: 'Shift',      keyCode: 16, code: 'ShiftLeft'  },
-  CU:     { key: 'i',          keyCode: 73, code: 'KeyI'       },
-  CD:     { key: 'k',          keyCode: 75, code: 'KeyK'       },
-  CL:     { key: 'j',          keyCode: 74, code: 'KeyJ'       },
-  CR:     { key: 'l',          keyCode: 76, code: 'KeyL'       },
+  UP:    { key: 'ArrowUp',    keyCode: 38, code: 'ArrowUp'    },
+  DOWN:  { key: 'ArrowDown',  keyCode: 40, code: 'ArrowDown'  },
+  LEFT:  { key: 'ArrowLeft',  keyCode: 37, code: 'ArrowLeft'  },
+  RIGHT: { key: 'ArrowRight', keyCode: 39, code: 'ArrowRight' },
+  A:     { key: 'x',          keyCode: 88, code: 'KeyX'       },
+  B:     { key: 'z',          keyCode: 90, code: 'KeyZ'       },
+  L:     { key: 'q',          keyCode: 81, code: 'KeyQ'       },
+  R:     { key: 'w',          keyCode: 87, code: 'KeyW'       },
+  Z:     { key: 'e',          keyCode: 69, code: 'KeyE'       },
+  START: { key: 'Enter',      keyCode: 13, code: 'Enter'      },
+  CU:    { key: 'i',          keyCode: 73, code: 'KeyI'       },
+  CD:    { key: 'k',          keyCode: 75, code: 'KeyK'       },
+  CL:    { key: 'j',          keyCode: 74, code: 'KeyJ'       },
+  CR:    { key: 'l',          keyCode: 76, code: 'KeyL'       },
 };
 
 // Keys currently held (action name → true)
@@ -670,12 +680,23 @@ function fireKey(action, type) {
   if (cvs) cvs.dispatchEvent(new KeyboardEvent(type, opts));
 }
 
+function updateJoystickNub() {
+  const joy = document.getElementById('joystick');
+  if (!joy) return;
+  joy.classList.remove('pressed-up','pressed-down','pressed-left','pressed-right');
+  if (held['UP'])    joy.classList.add('pressed-up');
+  if (held['DOWN'])  joy.classList.add('pressed-down');
+  if (held['LEFT'])  joy.classList.add('pressed-left');
+  if (held['RIGHT']) joy.classList.add('pressed-right');
+}
+
 function pressAction(action) {
-  if (held[action]) return; // already down
+  if (held[action]) return;
   held[action] = true;
   const el = document.getElementById('tb-' + action);
   if (el) el.classList.add('pressed');
   fireKey(action, 'keydown');
+  updateJoystickNub();
 }
 
 function releaseAction(action) {
@@ -684,6 +705,7 @@ function releaseAction(action) {
   const el = document.getElementById('tb-' + action);
   if (el) el.classList.remove('pressed');
   fireKey(action, 'keyup');
+  updateJoystickNub();
 }
 
 // ── Touch handling ──────────────────────────────────
