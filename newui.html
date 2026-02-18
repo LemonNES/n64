@@ -344,6 +344,7 @@
     <div class="icon-btn" id="btnSettings" title="Settings">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     </div>
+    <div class="icon-btn" id="btnDebug" title="Toggle input debug" style="font-size:16px;">🐛</div>
   </div>
 
   <div class="game-container">
@@ -354,6 +355,8 @@
         <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:12px;opacity:0.3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
         LOAD A ROM TO PLAY
       </div>
+      <!-- Debug overlay: shows live gamepad state. Toggle with the bug button. -->
+      <div id="debugOverlay" style="display:none;position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:10px;font-family:monospace;color:#0f0;background:rgba(0,0,0,0.7);padding:4px;z-index:10;pointer-events:none;"></div>
     </div>
   </div>
 
@@ -444,84 +447,73 @@ document.getElementById('resSelect').addEventListener('change', function() {
 });
 
 // ═══════════════════════════════════════════════════
-//  VIRTUAL GAMEPAD — THE CORE FIX
+//  VIRTUAL GAMEPAD — MULTI-LAYER INPUT SYSTEM
 //
-//  Libretro/RetroArch WASM cores use navigator.getGamepads()
-//  to read input. They do NOT read keyboard events at all
-//  (unless you configure a keyboard-to-gamepad mapping in
-//  the core, which is not standard).
+//  mupen64plus_next WASM uses THREE input paths depending
+//  on how it was compiled. We cover all three:
 //
-//  The fix: intercept navigator.getGamepads() and return a
-//  fake Gamepad object that we control from touch/mouse input.
+//  LAYER 1: navigator.getGamepads() override
+//    — Most libretro WASM cores poll this directly via
+//      Emscripten's SDL2 gamepad layer.
 //
-//  RETROPAD BUTTON INDEX MAP (Standard Libretro layout):
-//   0  = B         (South / Cross)
-//   1  = Y         (West / Square)  — N64: unused / mapped as needed
-//   2  = Select
-//   3  = Start
-//   4  = D-Up
-//   5  = D-Down
-//   6  = D-Left
-//   7  = D-Right
-//   8  = A         (East / Circle)
-//   9  = X         (North / Triangle) — N64: unused / mapped as needed
-//  10  = L
-//  11  = R
-//  12  = L2 / Z trigger
-//  13  = R2
-//  14  = L3
-//  15  = R3
+//  LAYER 2: Emscripten SDL2 internal state injection
+//    — After Module initializes, SDL2.gamepadTimestamp is
+//      patched so the core sees fresh input every frame.
+//      We also hook Module.SDL2.gamepad.* if exposed.
 //
-//  AXES (standard):
-//   0 = Left stick X  (-1=left, +1=right)
-//   1 = Left stick Y  (-1=up,   +1=down)
-//   2 = Right stick X (C-buttons L/R)
-//   3 = Right stick Y (C-buttons U/D)
+//  LAYER 3: Keyboard events (fallback)
+//    — Some core builds fall back to SDL keyboard input.
+//      We fire both keydown AND the gamepad path.
 //
-//  mupen64plus_next maps:
-//    RetroPad B       → N64 A button
-//    RetroPad Y       → N64 B button
-//    RetroPad Start   → N64 Start
-//    RetroPad D-pad   → N64 D-pad
-//    RetroPad A       → N64 C-Down (alternate)
-//    RetroPad L       → N64 L shoulder
-//    RetroPad R       → N64 R shoulder
-//    RetroPad L2      → N64 Z trigger
-//    Left  stick      → N64 Analog stick
-//    Right stick      → N64 C-buttons (analog)
+//  RETROPAD → N64 BUTTON MAP (mupen64plus_next default):
+//   buttons[0]  = RetroPad B     → N64 A button
+//   buttons[1]  = RetroPad Y     → N64 B button
+//   buttons[2]  = RetroPad Select
+//   buttons[3]  = RetroPad Start → N64 Start
+//   buttons[4]  = D-Up           → N64 D-Up
+//   buttons[5]  = D-Down         → N64 D-Down
+//   buttons[6]  = D-Left         → N64 D-Left
+//   buttons[7]  = D-Right        → N64 D-Right
+//   buttons[8]  = RetroPad A     → N64 C-Down (alt)
+//   buttons[9]  = RetroPad X     → N64 C-Left (alt)
+//   buttons[10] = L              → N64 L shoulder
+//   buttons[11] = R              → N64 R shoulder
+//   buttons[12] = L2             → N64 Z trigger
+//   buttons[13] = R2
+//   buttons[14] = L3
+//   buttons[15] = R3
+//   axes[0] = Left stick X       → N64 Analog X
+//   axes[1] = Left stick Y       → N64 Analog Y
+//   axes[2] = Right stick X      → N64 C-Left/Right
+//   axes[3] = Right stick Y      → N64 C-Up/Down
 // ═══════════════════════════════════════════════════
 
 const NUM_BUTTONS = 16;
 const NUM_AXES    = 4;
 
-// Internal state arrays
-const gpButtons = new Array(NUM_BUTTONS).fill(0);
-const gpAxes    = new Array(NUM_AXES).fill(0);
+// Live state — mutated directly, no copying until poll
+const gpButtons = new Float64Array(NUM_BUTTONS);
+const gpAxes    = new Float64Array(NUM_AXES);
 
-// Action → gamepad button/axis mapping
-// Format: { type: 'button', index } or { type: 'axis', index, value }
+// Action → gamepad mapping
 const ACTION_MAP = {
-  // Face buttons
-  A:      { type: 'button', index: 0  },  // RetroPad B  → N64 A
-  B:      { type: 'button', index: 1  },  // RetroPad Y  → N64 B
-  START:  { type: 'button', index: 3  },  // RetroPad Start
-  // Shoulders
-  L:      { type: 'button', index: 10 },  // L
-  R:      { type: 'button', index: 11 },  // R
-  Z:      { type: 'button', index: 12 },  // L2 = Z trigger
-  // D-Pad
-  DUP:    { type: 'button', index: 4  },
-  DDOWN:  { type: 'button', index: 5  },
-  DLEFT:  { type: 'button', index: 6  },
-  DRIGHT: { type: 'button', index: 7  },
-  // C-buttons via right stick axes
-  CU:     { type: 'axis', index: 3, value: -1 },
-  CD:     { type: 'axis', index: 3, value:  1 },
-  CL:     { type: 'axis', index: 2, value: -1 },
-  CR:     { type: 'axis', index: 2, value:  1 },
+  A:      { type: 'button', index: 0  },   // N64 A
+  B:      { type: 'button', index: 1  },   // N64 B
+  START:  { type: 'button', index: 3  },   // N64 Start
+  L:      { type: 'button', index: 10 },   // N64 L
+  R:      { type: 'button', index: 11 },   // N64 R
+  Z:      { type: 'button', index: 12 },   // N64 Z trigger
+  DUP:    { type: 'button', index: 4  },   // N64 D-Up
+  DDOWN:  { type: 'button', index: 5  },   // N64 D-Down
+  DLEFT:  { type: 'button', index: 6  },   // N64 D-Left
+  DRIGHT: { type: 'button', index: 7  },   // N64 D-Right
+  CU:     { type: 'axis',   index: 3, value: -1 },
+  CD:     { type: 'axis',   index: 3, value:  1 },
+  CL:     { type: 'axis',   index: 2, value: -1 },
+  CR:     { type: 'axis',   index: 2, value:  1 },
 };
 
-// Axis state for C-buttons (track which directions are held)
+// Track held axis directions to resolve conflicts
 const axisHeld = { 2: {'-1':false,'1':false}, 3: {'-1':false,'1':false} };
 
 function pressAction(action) {
@@ -531,13 +523,11 @@ function pressAction(action) {
     gpButtons[m.index] = 1;
   } else {
     axisHeld[m.index][String(m.value)] = true;
-    updateAxis(m.index);
+    recomputeAxis(m.index);
   }
-  // Visual
-  document.querySelectorAll(`[data-action="${action}"]`).forEach(el => {
-    el.classList.add('pressed');
-  });
-  if (navigator.vibrate) navigator.vibrate(10);
+  document.querySelectorAll(`[data-action="${action}"]`).forEach(el => el.classList.add('pressed'));
+  if (navigator.vibrate) navigator.vibrate(8);
+  updateDebug();
 }
 
 function releaseAction(action) {
@@ -547,53 +537,97 @@ function releaseAction(action) {
     gpButtons[m.index] = 0;
   } else {
     axisHeld[m.index][String(m.value)] = false;
-    updateAxis(m.index);
+    recomputeAxis(m.index);
   }
-  document.querySelectorAll(`[data-action="${action}"]`).forEach(el => {
-    el.classList.remove('pressed');
-  });
+  document.querySelectorAll(`[data-action="${action}"]`).forEach(el => el.classList.remove('pressed'));
+  updateDebug();
 }
 
-function updateAxis(axisIndex) {
-  const neg = axisHeld[axisIndex]['-1'];
-  const pos = axisHeld[axisIndex]['1'];
-  gpAxes[axisIndex] = neg && pos ? 0 : neg ? -1 : pos ? 1 : 0;
+function recomputeAxis(i) {
+  const neg = axisHeld[i]['-1'], pos = axisHeld[i]['1'];
+  gpAxes[i] = (neg && pos) ? 0 : neg ? -1 : pos ? 1 : 0;
 }
 
-// Build the fake Gamepad object
+// ── LAYER 1: navigator.getGamepads() override ──────
 function buildFakeGamepad() {
   return {
-    id: 'Virtual N64 Controller (LemonN64)',
+    id: 'Xbox 360 Controller (XInput STANDARD GAMEPAD)',  // ID that cores trust
     index: 0,
     connected: true,
     timestamp: performance.now(),
     mapping: 'standard',
-    axes: gpAxes.slice(),   // snapshot
-    buttons: gpButtons.map(v => ({ pressed: v > 0.5, touched: v > 0.5, value: v })),
+    axes: Array.from(gpAxes),
+    buttons: Array.from(gpButtons).map(v => ({
+      pressed: v >= 1,
+      touched: v >= 1,
+      value:   v,
+    })),
   };
 }
 
-// Override navigator.getGamepads
-const _origGetGamepads = navigator.getGamepads.bind(navigator);
+const _origGetGamepads = navigator.getGamepads
+  ? navigator.getGamepads.bind(navigator)
+  : () => [];
+
 Object.defineProperty(navigator, 'getGamepads', {
   value: function() {
-    // Return our virtual pad at slot 0; fill rest with nulls
-    const real = _origGetGamepads() || [];
-    const result = [buildFakeGamepad(), real[1] || null, real[2] || null, real[3] || null];
-    return result;
+    const gp = buildFakeGamepad();
+    // Also inject into SDL2 layer if available (Layer 2)
+    injectSDL2(gp);
+    return [gp, null, null, null];
   },
   writable: true,
   configurable: true,
 });
 
-// Fire a synthetic gamepadconnected event so the core registers the pad
-window.addEventListener('load', () => {
-  setTimeout(() => {
+// ── LAYER 2: Emscripten SDL2 internal injection ───
+// Emscripten SDL2 caches gamepad state in JS objects.
+// We overwrite them each frame so the core sees our input.
+function injectSDL2(gp) {
+  try {
+    const sdl2 = window.SDL2 || (window.Module && window.Module.SDL2);
+    if (!sdl2 || !sdl2.game_controllers) return;
+    // SDL2 stores game controllers in a dict keyed by index
+    const ctrl = sdl2.game_controllers[0] ||
+                 sdl2.game_controllers['0'];
+    if (!ctrl) return;
+    // Overwrite axes and buttons in-place
+    if (ctrl.axes) {
+      for (let i = 0; i < gpAxes.length; i++) ctrl.axes[i] = gpAxes[i];
+    }
+    if (ctrl.buttons) {
+      for (let i = 0; i < gpButtons.length; i++) {
+        ctrl.buttons[i] = gpButtons[i] >= 1 ? 1 : 0;
+      }
+    }
+    if (ctrl.timestamp !== undefined) ctrl.timestamp = performance.now();
+  } catch(_) {}
+}
+
+// ── Fire gamepadconnected at the right moment ──────
+// We fire it: (a) immediately, (b) after Module runtime
+// init, and (c) after ROM loads. Belt-and-suspenders.
+function fireGamepadConnected() {
+  try {
     const ev = new Event('gamepadconnected');
     ev.gamepad = buildFakeGamepad();
     window.dispatchEvent(ev);
-  }, 500);
-});
+    console.log('[LemonN64] gamepadconnected fired');
+  } catch(_) {}
+}
+// Fire immediately in case core is already listening
+setTimeout(fireGamepadConnected, 100);
+setTimeout(fireGamepadConnected, 1000);
+
+// ── DEBUG OVERLAY ──────────────────────────────────
+let debugVisible = false;
+function updateDebug() {
+  const el = document.getElementById('debugOverlay');
+  if (!el || !debugVisible) return;
+  const btns = Array.from(gpButtons).map((v,i) => v ? `B${i}` : '').filter(Boolean);
+  const axes = Array.from(gpAxes).map((v,i) => `A${i}:${v.toFixed(2)}`);
+  el.textContent = `BTN:[${btns.join(' ')}]  AX:[${axes.join(' ')}]`;
+}
 
 // ═══════════════════════════════════════════════════
 //  ANALOG STICK — maps to axes[0] (X) and axes[1] (Y)
@@ -762,10 +796,33 @@ window.Module = {
   canvas: canvas,
   print:    console.log,
   printErr: console.warn,
-  // Tell Emscripten the canvas is already the right size
-  // so it doesn't override our resolution settings.
   onRuntimeInitialized: function() {
-    console.log('[LemonN64] Runtime ready');
+    console.log('[LemonN64] Runtime ready — injecting virtual gamepad');
+    // Ensure SDL2 game_controllers table has our pad at index 0
+    // so the core finds it when it calls SDL_NumJoysticks()
+    const tryInjectSDLGamepad = () => {
+      try {
+        const sdl2 = window.SDL2 || Module.SDL2;
+        if (!sdl2) return;
+        if (!sdl2.game_controllers) sdl2.game_controllers = {};
+        if (!sdl2.game_controllers[0]) {
+          sdl2.game_controllers[0] = {
+            axes:      Array.from(gpAxes),
+            buttons:   Array.from(gpButtons),
+            timestamp: performance.now(),
+            id: 'Xbox 360 Controller',
+          };
+          console.log('[LemonN64] SDL2 game_controllers[0] injected');
+        }
+        if (!sdl2.gamepads) sdl2.gamepads = {};
+        sdl2.gamepads[0] = buildFakeGamepad();
+      } catch(e) { console.warn('[LemonN64] SDL2 inject:', e); }
+    };
+    tryInjectSDLGamepad();
+    setTimeout(tryInjectSDLGamepad, 200);
+    // Re-fire connect event after WASM is live
+    setTimeout(fireGamepadConnected, 50);
+    setTimeout(fireGamepadConnected, 500);
   },
 };
 
@@ -782,6 +839,9 @@ document.getElementById('romInput').addEventListener('change', function() {
       // Re-apply resolution after core initializes (core may resize canvas)
       setTimeout(() => setCanvasResolution(resMultiplier), 200);
       Module.callMain(['/rom.z64']);
+      // Re-fire gamepad connect so core registers the pad after ROM load
+      setTimeout(fireGamepadConnected, 300);
+      setTimeout(fireGamepadConnected, 1500);
     } catch(e) { console.error('[LemonN64] ROM load error:', e); }
   };
   reader.readAsArrayBuffer(file);
@@ -801,10 +861,20 @@ scanlinesToggle.addEventListener('click', () => {
   document.getElementById('scanlines').classList.toggle('active');
 });
 
+document.getElementById('btnDebug').addEventListener('click', () => {
+  debugVisible = !debugVisible;
+  const el = document.getElementById('debugOverlay');
+  el.style.display = debugVisible ? 'block' : 'none';
+  if (debugVisible) updateDebug();
+});
+
 document.getElementById('btnSaveState').addEventListener('click', () => {
   if (typeof Module._cmd_save_state === 'function') Module._cmd_save_state();
   toggleSettings();
 });
+
+// Continuously update debug overlay when visible
+setInterval(() => { if (debugVisible) updateDebug(); }, 100);
 </script>
 
 <!-- Load the mupen64plus_next libretro WASM core -->
