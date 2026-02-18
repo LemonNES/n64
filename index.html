@@ -248,15 +248,16 @@
     .ab-group {
       position: absolute;
       bottom: 0; right: 10px;
-      width: 110px; height: 100px;
+      width: 120px; height: 110px;
     }
     .btn-circle {
       position: absolute; border-radius: 50%;
       font-weight: 700; font-size: 18px;
+      pointer-events: all;
     }
     .btn-a {
       width: 55px; height: 55px;
-      bottom: 25px; right: 0;
+      bottom: 30px; right: 0;
       color: #9bb0ff; border-color: rgba(73, 105, 230, 0.3);
       z-index: 1;
     }
@@ -264,9 +265,9 @@
 
     .btn-b {
       width: 45px; height: 45px;
-      bottom: 0; right: 65px;
+      bottom: 0; left: 0;
       color: #8affae; border-color: rgba(42, 168, 80, 0.3);
-      z-index: 2;
+      z-index: 1;
     }
     .btn-b.pressed { background: var(--b-btn); color: #fff; border-color: var(--b-btn); }
 
@@ -504,7 +505,7 @@ const gpAxes    = new Float64Array(NUM_AXES);
 //   12=D-Up  13=D-Down  14=D-Left  15=D-Right  16=Home
 const ACTION_MAP = {
   A:      { type: 'button', index: 1  },   // Switch A  → N64 A
-  B:      { type: 'button', index: 3  },   // Switch Y  → N64 B
+  B:      { type: 'button', index: 0  },   // Switch B  → N64 B
   START:  { type: 'button', index: 9  },   // Plus      → N64 Start
   L:      { type: 'button', index: 4  },   // L         → N64 L
   R:      { type: 'button', index: 5  },   // R         → N64 R
