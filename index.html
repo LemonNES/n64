@@ -424,14 +424,6 @@
         <span>Save State</span>
         <button class="touch-btn" style="padding: 4px 12px; border-radius: 8px; font-size:12px;" id="btnSaveState">Save</button>
       </div>
-      <div style="margin-top:16px;border-top:1px solid var(--glass-border);padding-top:16px;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-          Button Remap
-          <button onclick="resetRemap()" style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);color:#ff8888;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;">Reset</button>
-        </div>
-        <div id="remapLabel" style="font-size:11px;color:var(--acc);min-height:16px;margin-bottom:8px;text-align:center;"></div>
-        <div id="remapTable" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;"></div>
-      </div>
     </div>
   </div>
 
@@ -506,15 +498,17 @@ const gpButtons = new Float64Array(NUM_BUTTONS);
 const gpAxes    = new Float64Array(NUM_AXES);
 
 // Action → gamepad mapping
-// These are editable via the Remap UI in settings.
-// Saved to localStorage so they persist across reloads.
-const DEFAULT_MAP = {
-  A:      { type: 'button', index: 0  },
-  B:      { type: 'button', index: 1  },
-  START:  { type: 'button', index: 9  },
-  L:      { type: 'button', index: 4  },
-  R:      { type: 'button', index: 5  },
-  Z:      { type: 'button', index: 6  },
+// Switch Pro Controller button layout (what the core sees via SDL2):
+//   0=B  1=A  2=X  3=Y  4=L  5=R  6=ZL  7=ZR
+//   8=Minus  9=Plus  10=L3  11=R3
+//   12=D-Up  13=D-Down  14=D-Left  15=D-Right  16=Home
+const ACTION_MAP = {
+  A:      { type: 'button', index: 1  },   // Switch A  → N64 A
+  B:      { type: 'button', index: 0  },   // Switch B  → N64 B
+  START:  { type: 'button', index: 9  },   // Plus      → N64 Start
+  L:      { type: 'button', index: 4  },   // L         → N64 L
+  R:      { type: 'button', index: 5  },   // R         → N64 R
+  Z:      { type: 'button', index: 6  },   // ZL        → N64 Z trigger
   DUP:    { type: 'button', index: 12 },
   DDOWN:  { type: 'button', index: 13 },
   DLEFT:  { type: 'button', index: 14 },
@@ -524,56 +518,6 @@ const DEFAULT_MAP = {
   CL:     { type: 'axis',   index: 2, value: -1 },
   CR:     { type: 'axis',   index: 2, value:  1 },
 };
-
-function loadMap() {
-  try {
-    const saved = localStorage.getItem('lemon64_map');
-    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_MAP));
-  } catch(_) { return JSON.parse(JSON.stringify(DEFAULT_MAP)); }
-}
-function saveMap() {
-  try { localStorage.setItem('lemon64_map', JSON.stringify(ACTION_MAP)); } catch(_) {}
-}
-const ACTION_MAP = loadMap();
-
-// ── REMAP MODE ─────────────────────────────────────
-// When active, the next physical gamepad button press
-// gets assigned to the pending action.
-let remapPending = null; // action name waiting for assignment
-
-function startRemap(action) {
-  remapPending = action;
-  const label = document.getElementById('remapLabel');
-  if (label) label.textContent = `Press the button for: ${action}`;
-}
-
-function cancelRemap() {
-  remapPending = null;
-  const label = document.getElementById('remapLabel');
-  if (label) label.textContent = '';
-}
-
-// Poll physical gamepad to detect button presses for remapping
-setInterval(() => {
-  if (!remapPending) return;
-  try {
-    const pads = _origGetGamepads();
-    const pad = pads[0] || pads[1] || pads[2] || pads[3];
-    if (!pad) return;
-    for (let i = 0; i < pad.buttons.length; i++) {
-      if (pad.buttons[i].pressed) {
-        ACTION_MAP[remapPending] = { type: 'button', index: i };
-        saveMap();
-        const label = document.getElementById('remapLabel');
-        if (label) label.textContent = `✓ ${remapPending} → button ${i}`;
-        remapPending = null;
-        renderRemapTable();
-        setTimeout(() => { if (label) label.textContent = ''; }, 1500);
-        return;
-      }
-    }
-  } catch(_) {}
-}, 50);
 
 // Track held axis directions to resolve conflicts
 const axisHeld = { 2: {'-1':false,'1':false}, 3: {'-1':false,'1':false} };
@@ -613,7 +557,7 @@ function recomputeAxis(i) {
 // ── LAYER 1: navigator.getGamepads() override ──────
 function buildFakeGamepad() {
   return {
-    id: 'Xbox 360 Controller (XInput STANDARD GAMEPAD)',  // ID that cores trust
+    id: 'Nintendo Switch Pro Controller (STANDARD GAMEPAD Vendor: 057e Product: 2009)',
     index: 0,
     connected: true,
     timestamp: performance.now(),
@@ -914,7 +858,6 @@ document.getElementById('romInput').addEventListener('change', function() {
 // ═══════════════════════════════════════════════════
 function toggleSettings() {
   document.getElementById('settingsModal').classList.toggle('active');
-  renderRemapTable();
 }
 document.getElementById('btnSettings').addEventListener('click', toggleSettings);
 
@@ -938,30 +881,6 @@ document.getElementById('btnSaveState').addEventListener('click', () => {
 
 // Continuously update debug overlay when visible
 setInterval(() => { if (debugVisible) updateDebug(); }, 100);
-
-// ── REMAP TABLE UI ─────────────────────────────────
-const REMAPPABLE = ['A','B','START','L','R','Z','DUP','DDOWN','DLEFT','DRIGHT'];
-
-function renderRemapTable() {
-  const table = document.getElementById('remapTable');
-  if (!table) return;
-  table.innerHTML = REMAPPABLE.map(action => {
-    const m = ACTION_MAP[action];
-    const label = m.type === 'button' ? `btn ${m.index}` : `axis ${m.index}`;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border-radius:6px;padding:4px 8px;">
-      <span style="color:var(--fg)">${action}</span>
-      <button onclick="startRemap('${action}')" style="background:rgba(115,215,255,0.1);border:1px solid rgba(115,215,255,0.2);color:var(--acc);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;">${label}</button>
-    </div>`;
-  }).join('');
-}
-
-function resetRemap() {
-  Object.assign(ACTION_MAP, JSON.parse(JSON.stringify(DEFAULT_MAP)));
-  try { localStorage.removeItem('lemon64_map'); } catch(_) {}
-  renderRemapTable();
-  const label = document.getElementById('remapLabel');
-  if (label) { label.textContent = '✓ Reset to defaults'; setTimeout(() => label.textContent = '', 1500); }
-}
 </script>
 
 <!-- Load the mupen64plus_next libretro WASM core -->
