@@ -577,10 +577,7 @@ const _origGetGamepads = navigator.getGamepads
 
 Object.defineProperty(navigator, 'getGamepads', {
   value: function() {
-    const gp = buildFakeGamepad();
-    // Also inject into SDL2 layer if available (Layer 2)
-    injectSDL2(gp);
-    return [gp, null, null, null];
+    return [buildFakeGamepad(), null, null, null];
   },
   writable: true,
   configurable: true,
