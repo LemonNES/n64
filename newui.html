@@ -7,15 +7,15 @@
   <style>
     :root {
       --bg: #050505;
-      --acc: #73d7ff;       /* Blue accent from LemonNES */
+      --acc: #73d7ff;       
       --acc-glow: rgba(115, 215, 255, 0.4);
       --glass: rgba(255, 255, 255, 0.06);
       --glass-border: rgba(255, 255, 255, 0.1);
       --text-muted: rgba(255, 255, 255, 0.4);
       --fg: #e8f0ff;
-      --c-btn: #f0bd00;     /* N64 C-Button Yellow (muted) */
-      --a-btn: #4969e6;     /* N64 A Blue */
-      --b-btn: #2aa850;     /* N64 B Green */
+      --c-btn: #f0bd00;     
+      --a-btn: #4969e6;     
+      --b-btn: #2aa850;     
       --radius-md: 16px;
       --radius-lg: 24px;
     }
@@ -65,27 +65,33 @@
       justify-content: center;
       position: relative;
       padding: 0 16px;
-      max-height: 45vh; /* Leave room for big N64 controls */
+      max-height: 45vh; 
       z-index: 10;
     }
 
     .screen-wrapper {
       background: #000;
       aspect-ratio: 4/3;
-      width: 100%;
-      max-height: 100%;
-      max-width: calc(100vh * 4/3);
+      height: 100%;
+      width: auto;
+      max-width: 100%;
       border-radius: var(--radius-md);
       position: relative;
       box-shadow: 0 0 50px rgba(0,0,0,0.6);
       overflow: hidden;
       border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     canvas {
-      width: 100%; height: 100%;
+      width: 100%;
+      height: 100%;
       display: block;
-      image-rendering: pixelated;
+      /* N64 looks better with smooth scaling (bilinear) rather than pixelated */
+      image-rendering: auto; 
+      object-fit: contain;
     }
 
     /* CRT Scanlines */
@@ -94,23 +100,23 @@
       background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
       pointer-events: none; opacity: 0;
       transition: opacity 0.3s;
+      z-index: 5;
     }
     .scanlines.active { opacity: 1; }
 
-    /* Hint text */
     .idle-hint {
       position: absolute; inset: 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       color: var(--text-muted); font-size: 13px; letter-spacing: 1px;
       pointer-events: none; opacity: 1; transition: opacity 0.3s;
+      z-index: 4;
     }
     .idle-hint.hidden { opacity: 0; }
 
     /* ─── CONTROLS LAYOUT ────────────────────────── */
-    /* Grid layout: Left (Stick/Dpad) | Center (Start) | Right (C/A/B) */
     .controls-area {
       flex: 0 0 auto;
-      height: 45vh; /* Dedicated control height */
+      height: 45vh;
       max-height: 380px;
       padding: 10px 16px max(16px, env(safe-area-inset-bottom));
       display: grid;
@@ -120,7 +126,6 @@
       z-index: 30;
     }
 
-    /* Shared Button Styles */
     .touch-btn {
       background: var(--glass);
       backdrop-filter: blur(12px);
@@ -141,14 +146,13 @@
       box-shadow: 0 0 15px rgba(255,255,255,0.1);
     }
 
-    /* ── LEFT GROUP: Shoulders, Stick, Dpad ── */
+    /* ── LEFT GROUP ── */
     .group-left {
       display: flex; flex-direction: column;
       align-items: center; justify-content: space-between;
       position: relative;
     }
 
-    /* Shoulder Row (L / Z) */
     .shoulder-row {
       display: flex; gap: 12px;
       width: 100%; justify-content: center;
@@ -161,7 +165,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Analog Stick */
     .analog-area {
       position: relative;
       width: 140px; height: 140px;
@@ -177,18 +180,16 @@
       position: absolute;
       top: 50%; left: 50%;
       width: 50px; height: 50px;
-      margin: -25px 0 0 -25px; /* Center */
+      margin: -25px 0 0 -25px;
       border-radius: 50%;
       background: rgba(255,255,255,0.1);
       border: 1px solid rgba(255,255,255,0.2);
       box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
       pointer-events: none;
-      transition: transform 0.05s linear; /* Smooth visual update via JS */
+      transition: transform 0.05s linear;
     }
-    /* Active glow for stick */
     .analog-area.active .stick-nub { background: var(--acc); box-shadow: 0 0 20px var(--acc-glow); border-color: transparent; }
 
-    /* D-Pad (Secondary) */
     .dpad {
       width: 100px; height: 100px;
       position: relative;
@@ -203,7 +204,7 @@
       background: var(--glass); pointer-events: none;
     }
 
-    /* ── CENTER GROUP: Start ── */
+    /* ── CENTER GROUP ── */
     .group-center {
       display: flex; align-items: flex-end; justify-content: center;
       padding-bottom: 30px;
@@ -215,15 +216,13 @@
       letter-spacing: 1px;
     }
 
-    /* ── RIGHT GROUP: Shoulders, C-Pad, A/B ── */
+    /* ── RIGHT GROUP ── */
     .group-right {
       display: flex; flex-direction: column;
       align-items: center; justify-content: space-between;
     }
-
     .btn-r { width: 60px; height: 32px; border-radius: 16px; font-size: 12px; font-weight: 700; }
-
-    /* Action Container (C buttons + A/B) */
+    
     .actions-grid {
       position: relative;
       width: 100%; height: 100%;
@@ -231,7 +230,6 @@
       align-items: center; justify-content: center;
     }
 
-    /* C-Buttons (Diamond Cluster) */
     .c-group {
       position: absolute;
       top: 10px; right: 20px;
@@ -249,7 +247,6 @@
     .c-left { top: 28px; left: 0; }
     .c-right { top: 28px; right: 0; }
 
-    /* A / B Buttons */
     .ab-group {
       position: absolute;
       bottom: 0; right: 10px;
@@ -259,7 +256,6 @@
       position: absolute; border-radius: 50%;
       font-weight: 700; font-size: 18px;
     }
-    /* A is larger, Blue */
     .btn-a {
       width: 55px; height: 55px;
       bottom: 25px; right: 0;
@@ -267,7 +263,6 @@
     }
     .btn-a.pressed { background: var(--a-btn); color: #fff; border-color: var(--a-btn); }
 
-    /* B is smaller, Green */
     .btn-b {
       width: 45px; height: 45px;
       bottom: 0; right: 65px;
@@ -301,42 +296,46 @@
     .toggle.active { background: var(--acc); }
     .toggle.active::after { transform: translateX(20px); }
 
-    /* ─── LANDSCAPE ADJUSTMENTS ───────────────────── */
+    /* ─── LANDSCAPE ───────────────────── */
     @media (orientation: landscape) {
       body { flex-direction: row; }
-      .top-bar { display: none; } /* Hide top bar in landscape, maybe move toggle elsewhere if needed, but per constraints keeping it simple */
+      .top-bar { display: none; }
       
       .game-container {
         height: 100vh; max-height: 100vh;
-        width: 60vw;
-        order: 2;
+        width: 100%;
+        order: 1;
+        padding: 0;
       }
+      .screen-wrapper {
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        max-width: none;
+        aspect-ratio: auto;
+        width: 100%;
+      }
+      
       .controls-area {
         height: 100vh; width: 100vw; max-height: 100vh;
         position: absolute; inset: 0; pointer-events: none;
         grid-template-columns: 1fr 1fr;
         padding: 20px;
         gap: 0;
+        order: 2;
       }
       .controls-area > * { pointer-events: auto; }
       
-      /* Split controls to sides */
-      .group-left { position: absolute; bottom: 20px; left: 40px; align-items: flex-start; }
-      .group-center { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); }
-      .group-right { position: absolute; bottom: 20px; right: 40px; align-items: flex-end; }
+      .group-left { position: absolute; bottom: 30px; left: 40px; align-items: flex-start; }
+      .group-center { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
+      .group-right { position: absolute; bottom: 30px; right: 40px; align-items: flex-end; }
       
-      /* Adjust internal layouts for landscape hands */
-      .shoulder-row { width: auto; gap: 10px; margin-bottom: 20px; }
+      .shoulder-row { width: auto; gap: 15px; margin-bottom: 20px; }
       .analog-area { width: 160px; height: 160px; margin-bottom: 20px; }
-      .dpad { display: none; /* Hide dpad in landscape to unclutter, stick is primary */ }
+      .dpad { display: none; }
       
       .c-group { top: -90px; right: 10px; }
       .ab-group { bottom: 0; right: 0; }
-    }
-    
-    /* Desktop Hover States */
-    @media (hover: hover) {
-      .touch-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
     }
   </style>
 </head>
@@ -356,22 +355,20 @@
     <div class="screen-wrapper">
       <canvas id="canvas" tabindex="1"></canvas>
       <div class="scanlines" id="scanlines"></div>
+      
     </div>
   </div>
 
   <div class="controls-area" id="controls">
-
     <div class="group-left">
       <div class="shoulder-row">
         <div class="touch-btn btn-shoulder" data-action="L">L</div>
         <div class="touch-btn btn-shoulder" data-action="Z">Z</div>
       </div>
-      
       <div class="analog-area" id="analogStick">
         <div class="stick-base"></div>
         <div class="stick-nub"></div>
       </div>
-
       <div class="dpad">
         <div class="dpad-center"></div>
         <div class="touch-btn dpad-btn up" data-action="UP"></div>
@@ -380,16 +377,13 @@
         <div class="touch-btn dpad-btn right" data-action="RIGHT"></div>
       </div>
     </div>
-
     <div class="group-center">
       <div class="touch-btn btn-start" data-action="START">START</div>
     </div>
-
     <div class="group-right">
       <div class="shoulder-row" style="justify-content: flex-end; width:100%">
         <div class="touch-btn btn-r" data-action="R">R</div>
       </div>
-      
       <div class="actions-grid">
         <div class="c-group">
           <div class="touch-btn btn-c c-up" data-action="CU">C</div>
@@ -397,14 +391,12 @@
           <div class="touch-btn btn-c c-left" data-action="CL">C</div>
           <div class="touch-btn btn-c c-right" data-action="CR">C</div>
         </div>
-
         <div class="ab-group">
           <div class="touch-btn btn-circle btn-b" data-action="B">B</div>
           <div class="touch-btn btn-circle btn-a" data-action="A">A</div>
         </div>
       </div>
     </div>
-
   </div>
 
   <div class="settings-modal" id="settingsModal">
@@ -426,24 +418,39 @@
 
 <script>
 // ═══════════════════════════════════════════════════
-//  CORE INPUT LOGIC (Preserved for compatibility)
+//  INPUT MAPPING CONFIGURATION
 // ═══════════════════════════════════════════════════
+// FIX: Swapped Analog Stick to WASD and D-Pad to Arrow Keys.
+// This is because most Libretro/Emscripten cores map D-Pad to Arrow Keys by default.
+// If your core uses a different mapping, edit these keyCode values.
 
 const BINDINGS = {
-  UP:    { key: 'ArrowUp',    keyCode: 38, code: 'ArrowUp'    },
-  DOWN:  { key: 'ArrowDown',  keyCode: 40, code: 'ArrowDown'  },
-  LEFT:  { key: 'ArrowLeft',  keyCode: 37, code: 'ArrowLeft'  },
+  // D-PAD (Mapped to Arrow Keys)
+  UP:    { key: 'ArrowUp',    keyCode: 38, code: 'ArrowUp' },
+  DOWN:  { key: 'ArrowDown',  keyCode: 40, code: 'ArrowDown' },
+  LEFT:  { key: 'ArrowLeft',  keyCode: 37, code: 'ArrowLeft' },
   RIGHT: { key: 'ArrowRight', keyCode: 39, code: 'ArrowRight' },
-  A:     { key: 'x',          keyCode: 88, code: 'KeyX'       },
-  B:     { key: 'z',          keyCode: 90, code: 'KeyZ'       },
-  L:     { key: 'q',          keyCode: 81, code: 'KeyQ'       },
-  R:     { key: 'w',          keyCode: 87, code: 'KeyW'       },
-  Z:     { key: 'e',          keyCode: 69, code: 'KeyE'       },
-  START: { key: 'Enter',      keyCode: 13, code: 'Enter'      },
-  CU:    { key: 'i',          keyCode: 73, code: 'KeyI'       },
-  CD:    { key: 'k',          keyCode: 75, code: 'KeyK'       },
-  CL:    { key: 'j',          keyCode: 74, code: 'KeyJ'       },
-  CR:    { key: 'l',          keyCode: 76, code: 'KeyL'       },
+
+  // ANALOG STICK (Mapped to WASD for "Digital to Analog" fallback)
+  // Note: True analog requires the core to support the Gamepad API directly.
+  STICK_UP:    { key: 'w', keyCode: 87, code: 'KeyW' },
+  STICK_DOWN:  { key: 's', keyCode: 83, code: 'KeyS' },
+  STICK_LEFT:  { key: 'a', keyCode: 65, code: 'KeyA' },
+  STICK_RIGHT: { key: 'd', keyCode: 68, code: 'KeyD' },
+
+  // ACTIONS
+  A:     { key: 'x',     keyCode: 88, code: 'KeyX' },  // X is often A
+  B:     { key: 'c',     keyCode: 67, code: 'KeyC' },  // C is often B
+  L:     { key: 'q',     keyCode: 81, code: 'KeyQ' },
+  R:     { key: 'e',     keyCode: 69, code: 'KeyE' },
+  Z:     { key: 'z',     keyCode: 90, code: 'KeyZ' },  // Z Trigger
+  START: { key: 'Enter', keyCode: 13, code: 'Enter' },
+
+  // C-BUTTONS (Mapped to IJKL)
+  CU:    { key: 'i', keyCode: 73, code: 'KeyI' },
+  CD:    { key: 'k', keyCode: 75, code: 'KeyK' },
+  CL:    { key: 'j', keyCode: 74, code: 'KeyJ' },
+  CR:    { key: 'l', keyCode: 76, code: 'KeyL' },
 };
 
 const held = {};
@@ -451,13 +458,20 @@ const held = {};
 function fireKey(action, type) {
   const b = BINDINGS[action];
   if (!b) return;
+  
   const opts = {
-    key: b.key, code: b.code,
-    keyCode: b.keyCode, which: b.keyCode,
-    bubbles: true, cancelable: true
+    key: b.key, 
+    code: b.code,
+    keyCode: b.keyCode, 
+    which: b.keyCode,
+    bubbles: true, 
+    cancelable: true,
+    view: window
   };
+  
   const ev = new KeyboardEvent(type, opts);
   window.dispatchEvent(ev);
+  
   const cvs = document.getElementById('canvas');
   if (cvs) cvs.dispatchEvent(new KeyboardEvent(type, opts));
 }
@@ -483,7 +497,7 @@ function releaseAction(action) {
 }
 
 // ═══════════════════════════════════════════════════
-//  ANALOG STICK IMPLEMENTATION
+//  ANALOG STICK LOGIC
 // ═══════════════════════════════════════════════════
 const stick = document.getElementById('analogStick');
 const nub = stick.querySelector('.stick-nub');
@@ -499,37 +513,35 @@ function handleStickMove(clientX, clientY) {
   let dy = clientY - centerY;
   const dist = Math.sqrt(dx*dx + dy*dy);
   
-  // Clamp to radius
+  // Clamp
   if (dist > MAX_RADIUS) {
     const ratio = MAX_RADIUS / dist;
     dx *= ratio;
     dy *= ratio;
   }
   
-  // Update Visuals
+  // Update UI
   nub.style.transform = `translate(${dx}px, ${dy}px)`;
   
-  // Normalize -1.0 to 1.0
+  // Normalize
   const normX = dx / MAX_RADIUS;
   const normY = dy / MAX_RADIUS;
+  const THRESHOLD = 0.3; // Lower threshold for responsiveness
   
-  // Threshold Mapping (convert analog to digital for core)
-  // Threshold = 0.4
-  const THRESHOLD = 0.4;
-  
-  if (normY < -THRESHOLD) pressAction('UP'); else releaseAction('UP');
-  if (normY > THRESHOLD)  pressAction('DOWN'); else releaseAction('DOWN');
-  if (normX < -THRESHOLD) pressAction('LEFT'); else releaseAction('LEFT');
-  if (normX > THRESHOLD)  pressAction('RIGHT'); else releaseAction('RIGHT');
+  // Map Stick UI to WASD (STICK_ keys)
+  if (normY < -THRESHOLD) pressAction('STICK_UP'); else releaseAction('STICK_UP');
+  if (normY > THRESHOLD)  pressAction('STICK_DOWN'); else releaseAction('STICK_DOWN');
+  if (normX < -THRESHOLD) pressAction('STICK_LEFT'); else releaseAction('STICK_LEFT');
+  if (normX > THRESHOLD)  pressAction('STICK_RIGHT'); else releaseAction('STICK_RIGHT');
 }
 
 function resetStick() {
   nub.style.transform = `translate(0px, 0px)`;
   stick.classList.remove('active');
-  releaseAction('UP');
-  releaseAction('DOWN');
-  releaseAction('LEFT');
-  releaseAction('RIGHT');
+  releaseAction('STICK_UP');
+  releaseAction('STICK_DOWN');
+  releaseAction('STICK_LEFT');
+  releaseAction('STICK_RIGHT');
 }
 
 stick.addEventListener('touchstart', e => {
@@ -544,8 +556,7 @@ stick.addEventListener('touchmove', e => {
   e.preventDefault();
   for (let i=0; i<e.changedTouches.length; i++) {
     if (e.changedTouches[i].identifier === stickTouchId) {
-      const t = e.changedTouches[i];
-      handleStickMove(t.clientX, t.clientY);
+      handleStickMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
       break;
     }
   }
@@ -561,7 +572,7 @@ stick.addEventListener('touchend', e => {
   }
 });
 
-// Desktop Mouse Stick Support
+// Mouse Stick Support
 let isDraggingStick = false;
 stick.addEventListener('mousedown', e => {
   isDraggingStick = true;
@@ -586,14 +597,9 @@ window.addEventListener('mouseup', () => {
 // ═══════════════════════════════════════════════════
 const touchMap = new Map();
 
-function getActionFromEl(el) {
-  return el.dataset.action;
-}
-
 document.getElementById('controls').addEventListener('touchstart', e => {
-  if (e.target.closest('#analogStick')) return; // handled separately
+  if (e.target.closest('#analogStick')) return;
   e.preventDefault();
-  
   for (const t of e.changedTouches) {
     const btn = document.elementFromPoint(t.clientX, t.clientY)?.closest('[data-action]');
     if (btn) {
@@ -616,16 +622,17 @@ document.getElementById('controls').addEventListener('touchend', e => {
   }
 }, {passive: false});
 
-// Desktop Mouse Fallback for buttons
+// Desktop Mouse Click Support
 document.querySelectorAll('[data-action]').forEach(btn => {
   if (btn.closest('#analogStick')) return;
-  btn.addEventListener('mousedown', () => pressAction(btn.dataset.action));
-  btn.addEventListener('mouseup', () => releaseAction(btn.dataset.action));
-  btn.addEventListener('mouseleave', () => releaseAction(btn.dataset.action));
+  const action = btn.dataset.action;
+  btn.addEventListener('mousedown', () => pressAction(action));
+  btn.addEventListener('mouseup', () => releaseAction(action));
+  btn.addEventListener('mouseleave', () => releaseAction(action));
 });
 
 // ═══════════════════════════════════════════════════
-//  EMULATOR LOGIC (File Loading / Settings)
+//  EMULATOR LOGIC
 // ═══════════════════════════════════════════════════
 window.Module = {
   noInitialRun: true,
@@ -671,13 +678,10 @@ document.getElementById('btnSaveState').addEventListener('click', () => {
   toggleSettings();
 });
 
-// Keyboard Passthrough
+// Prevent default browser scrolling when using keyboard
 window.addEventListener('keydown', e => {
-  if (Object.values(BINDINGS).some(b => b.code === e.code)) {
-    // don't double fire if we generated it
-    if (!e.isTrusted) return; 
-    // prevent scrolling
-    if(['ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) {
+    e.preventDefault();
   }
 });
 
