@@ -258,6 +258,7 @@
       width: 55px; height: 55px;
       bottom: 25px; right: 0;
       color: #9bb0ff; border-color: rgba(73, 105, 230, 0.3);
+      z-index: 1;
     }
     .btn-a.pressed { background: var(--a-btn); color: #fff; border-color: var(--a-btn); }
 
@@ -265,6 +266,7 @@
       width: 45px; height: 45px;
       bottom: 0; right: 65px;
       color: #8affae; border-color: rgba(42, 168, 80, 0.3);
+      z-index: 2;
     }
     .btn-b.pressed { background: var(--b-btn); color: #fff; border-color: var(--b-btn); }
 
@@ -393,8 +395,8 @@
           <div class="touch-btn btn-c c-right" data-action="CR">C▶</div>
         </div>
         <div class="ab-group">
-          <div class="touch-btn btn-circle btn-b" data-action="B">B</div>
           <div class="touch-btn btn-circle btn-a" data-action="A">A</div>
+          <div class="touch-btn btn-circle btn-b" data-action="B">B</div>
         </div>
       </div>
     </div>
@@ -512,8 +514,8 @@ const gpAxes    = new Float64Array(NUM_AXES);
 //   Left axes[0/1]     → N64 Analog stick
 //   Right axes[2/3]    → N64 C-buttons
 const ACTION_MAP = {
-  A:      { type: 'button', index: 0  },   // Standard A  → N64 A
-  B:      { type: 'button', index: 1  },   // Standard B  → N64 B
+  A:      { type: 'button', index: 1  },   // Standard B  → N64 A
+  B:      { type: 'button', index: 0  },   // Standard A  → N64 B
   START:  { type: 'button', index: 9  },   // Standard Start
   L:      { type: 'button', index: 4  },   // Standard LB → N64 L
   R:      { type: 'button', index: 5  },   // Standard RB → N64 R
