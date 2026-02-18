@@ -216,39 +216,46 @@
     }
 
     .group-right {
+      position: relative;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: space-between;
+      align-items: flex-end; justify-content: flex-end;
+      gap: 8px;
     }
-    .btn-r { width: 60px; height: 32px; border-radius: 16px; font-size: 12px; font-weight: 700; }
+    .btn-r {
+      position: absolute;
+      top: 0; right: 0;
+      width: 60px; height: 32px; border-radius: 16px; font-size: 12px; font-weight: 700;
+    }
 
     .actions-grid {
-      position: relative;
-      width: 100%; height: 100%;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      padding-top: 44px;
     }
 
     .c-group {
-      position: absolute;
-      top: 10px; right: 20px;
-      width: 80px; height: 80px;
+      position: relative;
+      width: 100px; height: 100px;
+      flex-shrink: 0;
     }
     .btn-c {
-      position: absolute; width: 24px; height: 24px;
+      position: absolute; width: 32px; height: 32px;
       border-radius: 50%;
-      font-size: 8px; font-weight: 700;
+      font-size: 9px; font-weight: 700;
       color: var(--c-btn); border-color: rgba(240, 189, 0, 0.2);
     }
     .btn-c.pressed { background: var(--c-btn); color: #000; }
-    .c-up { top: 0; left: 28px; }
-    .c-down { bottom: 0; left: 28px; }
-    .c-left { top: 28px; left: 0; }
-    .c-right { top: 28px; right: 0; }
+    .c-up { top: 0; left: 34px; }
+    .c-down { bottom: 0; left: 34px; }
+    .c-left { top: 34px; left: 0; }
+    .c-right { top: 34px; right: 0; }
 
     .ab-group {
-      position: absolute;
-      bottom: 0; right: 10px;
+      position: relative;
       width: 120px; height: 110px;
+      flex-shrink: 0;
     }
     .btn-circle {
       position: absolute; border-radius: 50%;
@@ -295,6 +302,49 @@
     .toggle.active { background: var(--acc); }
     .toggle.active::after { transform: translateX(20px); }
 
+    /* ── TABLET PORTRAIT (768px+) ── */
+    @media (min-width: 768px) and (orientation: portrait) {
+      .controls-area { height: 40vh; max-height: 420px; }
+      .analog-area { width: 180px; height: 180px; }
+      .btn-shoulder { width: 80px; height: 40px; font-size: 14px; }
+      .btn-r { width: 80px; height: 40px; font-size: 14px; }
+      .dpad { width: 130px; height: 130px; }
+      .dpad-btn { width: 44px; height: 44px; }
+      .dpad-btn.up  { left: 43px; }
+      .dpad-btn.down { left: 43px; }
+      .dpad-btn.left { top: 43px; }
+      .dpad-btn.right { top: 43px; }
+      .dpad-center { top: 43px; left: 43px; width: 44px; height: 44px; }
+      .c-group { width: 130px; height: 130px; }
+      .btn-c { width: 42px; height: 42px; font-size: 11px; }
+      .c-up { left: 44px; }
+      .c-down { left: 44px; }
+      .c-left { top: 44px; }
+      .c-right { top: 44px; }
+      .ab-group { width: 160px; height: 150px; }
+      .btn-a { width: 75px; height: 75px; font-size: 22px; bottom: 40px; }
+      .btn-b { width: 62px; height: 62px; font-size: 20px; }
+      .btn-start { width: 90px; height: 34px; font-size: 12px; }
+    }
+
+    /* ── TABLET LANDSCAPE (1024px+) ── */
+    @media (min-width: 1024px) and (orientation: landscape) {
+      .analog-area { width: 200px !important; height: 200px !important; }
+      .btn-shoulder { width: 90px !important; height: 44px !important; font-size: 15px !important; }
+      .btn-r { width: 90px !important; height: 44px !important; font-size: 15px !important; }
+      .c-group { width: 150px !important; height: 150px !important; top: -120px !important; }
+      .btn-c { width: 48px !important; height: 48px !important; font-size: 12px !important; }
+      .c-up { left: 51px !important; }
+      .c-down { left: 51px !important; }
+      .c-left { top: 51px !important; }
+      .c-right { top: 51px !important; }
+      .ab-group { width: 180px !important; height: 170px !important; }
+      .btn-a { width: 85px !important; height: 85px !important; font-size: 24px !important; bottom: 45px !important; }
+      .btn-b { width: 70px !important; height: 70px !important; font-size: 22px !important; }
+      .group-left { left: 60px !important; }
+      .group-right { right: 60px !important; }
+    }
+
     @media (orientation: landscape) {
       body { flex-direction: row; }
       .top-bar { display: none; }
@@ -324,16 +374,13 @@
       }
       .controls-area > * { pointer-events: auto; }
 
-      .group-left { position: absolute; bottom: 30px; left: 40px; align-items: flex-start; }
+      .group-left { position: absolute; bottom: 20px; left: 40px; align-items: flex-start; flex-direction: column; justify-content: flex-end; gap: 16px; }
       .group-center { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
-      .group-right { position: absolute; bottom: 30px; right: 40px; align-items: flex-end; }
+      .group-right { position: absolute; bottom: 20px; right: 40px; align-items: flex-end; justify-content: flex-end; gap: 8px; }
 
-      .shoulder-row { width: auto; gap: 15px; margin-bottom: 20px; }
-      .analog-area { width: 160px; height: 160px; margin-bottom: 20px; }
+      .shoulder-row { width: auto; gap: 15px; margin-bottom: 0; }
+      .analog-area { width: 160px; height: 160px; margin-bottom: 0; }
       .dpad { display: none; }
-
-      .c-group { top: -90px; right: 10px; }
-      .ab-group { bottom: 0; right: 0; }
     }
   </style>
 </head>
@@ -385,9 +432,7 @@
       <div class="touch-btn btn-start" data-action="START">START</div>
     </div>
     <div class="group-right">
-      <div class="shoulder-row" style="justify-content: flex-end; width:100%">
-        <div class="touch-btn btn-r" data-action="R">R</div>
-      </div>
+      <div class="touch-btn btn-r" data-action="R">R</div>
       <div class="actions-grid">
         <div class="c-group">
           <div class="touch-btn btn-c c-up" data-action="CU">C▲</div>
@@ -876,6 +921,11 @@ document.getElementById('btnSaveState').addEventListener('click', () => {
   if (typeof Module._cmd_save_state === 'function') Module._cmd_save_state();
   toggleSettings();
 });
+
+// Direct listeners on B button to bypass elementFromPoint
+const btnB = document.querySelector('.btn-b');
+btnB.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); pressAction('B'); }, { passive: false });
+btnB.addEventListener('touchend',   e => { e.preventDefault(); e.stopPropagation(); releaseAction('B'); }, { passive: false });
 
 // Continuously update debug overlay when visible
 setInterval(() => { if (debugVisible) updateDebug(); }, 100);
