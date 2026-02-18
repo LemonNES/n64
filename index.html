@@ -5,847 +5,966 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>LemonN64</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #000000;
-      --fg: #e4e4e4;
-      --muted: rgba(228,228,228,0.28);
-      --surface: rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.07);
-      --accent: #c8f560;
-      --accent-dim: rgba(200,245,96,0.12);
-      --btn-glow: rgba(200,245,96,0.25);
-      --radius-sm: 6px;
-      --radius-md: 12px;
-      --radius-lg: 20px;
-      font-size: 14px;
+      --bg: #050505;
+      --acc: #73d7ff;
+      --acc-glow: rgba(115, 215, 255, 0.4);
+      --glass: rgba(255, 255, 255, 0.06);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --text-muted: rgba(255, 255, 255, 0.4);
+      --fg: #e8f0ff;
+      --c-btn: #f0bd00;
+      --a-btn: #4969e6;
+      --b-btn: #2aa850;
+      --radius-md: 16px;
+      --radius-lg: 24px;
     }
 
     html, body {
-      width: 100vw; height: 100dvh;
+      margin: 0; padding: 0;
+      background: var(--bg);
+      height: 100vh; width: 100vw;
       overflow: hidden;
-      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: var(--fg);
-      font-family: 'DM Sans', sans-serif;
       touch-action: none;
       user-select: none;
       -webkit-user-select: none;
-    }
-
-    /* ─── LAYOUT ──────────────────────────────────── */
-    body {
-      display: grid;
-      grid-template-rows: 1fr auto;
-      grid-template-areas: "screen" "controls";
-    }
-
-    /* ─── FLOATING TOP ACTIONS ────────────────────── */
-    #topbar {
-      position: fixed;
-      top: max(10px, env(safe-area-inset-top));
-      right: 12px;
       display: flex;
-      gap: 8px;
-      z-index: 10;
+      flex-direction: column;
     }
 
-    .bar-actions { display: flex; gap: 8px; }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: max(16px, env(safe-area-inset-top)) 24px 10px;
+      z-index: 20;
+    }
 
     .icon-btn {
-      width: 36px; height: 36px;
-      border-radius: var(--radius-sm);
-      background: var(--surface);
-      border: 1px solid var(--border);
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
       display: flex; align-items: center; justify-content: center;
-      color: var(--muted);
+      color: var(--text-muted);
       cursor: pointer;
-      transition: color 0.15s, background 0.15s, border-color 0.15s;
-      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s ease;
     }
-    .icon-btn:hover { color: var(--fg); border-color: rgba(255,255,255,0.15); }
-    .icon-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .icon-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.15); color: #fff; }
     input[type="file"] { display: none; }
 
-    /* ─── SCREEN ──────────────────────────────────── */
-    #screen-area {
-      grid-area: screen;
+    .game-container {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0 16px;
-      min-height: 0;
-    }
-
-    .canvas-wrap {
       position: relative;
-      aspect-ratio: 4/3;
-      width: min(92vw, calc((100dvh - 250px) * 4 / 3));
+      padding: 0 16px;
+      max-height: 45vh;
+      z-index: 10;
+    }
+
+    .screen-wrapper {
       background: #000;
+      aspect-ratio: 4/3;
+      height: 100%;
+      width: auto;
+      max-width: 100%;
       border-radius: var(--radius-md);
+      position: relative;
+      box-shadow: 0 0 50px rgba(0,0,0,0.6);
       overflow: hidden;
-      box-shadow: 0 0 0 1px var(--border), 0 8px 40px rgba(0,0,0,0.7);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
+    /*
+     * RESOLUTION FIX:
+     * The canvas PIXEL dimensions are set in JS to 640x480 (or 1280x960 for HiDPI).
+     * CSS stretches it to fill the container — this gives sharp, full-resolution output.
+     * Do NOT set width/height in CSS to pixel values; use 100%/auto for scaling.
+     */
     canvas {
-      width: 100%; height: 100%;
+      width: 100%;
+      height: 100%;
       display: block;
-      image-rendering: pixelated;
-      outline: none;
-      touch-action: none;
+      image-rendering: auto;
+      object-fit: contain;
     }
 
-    /* scanlines overlay (opt-in) */
     .scanlines {
       position: absolute; inset: 0;
-      pointer-events: none;
-      background: repeating-linear-gradient(
-        to bottom,
-        transparent, transparent 2px,
-        rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px
-      );
-      opacity: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+      pointer-events: none; opacity: 0;
       transition: opacity 0.3s;
+      z-index: 5;
     }
-    .scanlines.on { opacity: 1; }
+    .scanlines.active { opacity: 1; }
 
-    /* placeholder text when no ROM loaded */
     .idle-hint {
       position: absolute; inset: 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 8px;
-      color: rgba(255,255,255,0.15);
-      font-size: 13px;
-      font-family: 'DM Mono', monospace;
-      pointer-events: none;
-      transition: opacity 0.4s;
+      color: var(--text-muted); font-size: 13px; letter-spacing: 1px;
+      pointer-events: none; opacity: 1; transition: opacity 0.3s;
+      z-index: 4;
     }
-    .idle-hint svg { opacity: 0.4; }
     .idle-hint.hidden { opacity: 0; }
 
-    /* ─── CONTROLS ────────────────────────────────── */
-    #controls {
-      grid-area: controls;
+    .controls-area {
+      flex: 0 0 auto;
+      height: 45vh;
+      max-height: 380px;
+      padding: 10px 16px max(16px, env(safe-area-inset-bottom));
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
       position: relative;
-      height: 200px;
-      width: 100%;
-      flex-shrink: 0;
-      padding-bottom: max(8px, env(safe-area-inset-bottom));
-      overflow: hidden;
+      z-index: 30;
     }
 
-    /* generic touch button base */
-    .tb {
-      position: absolute;
+    .touch-btn {
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
       display: flex; align-items: center; justify-content: center;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--muted);
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      transition: background 0.08s, border-color 0.08s, color 0.08s, box-shadow 0.08s, transform 0.06s;
       touch-action: none;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.1s, color 0.1s, border-color 0.1s;
+      -webkit-tap-highlight-color: transparent;
     }
-    .tb.pressed {
-      background: var(--accent-dim);
-      border-color: var(--accent);
-      color: var(--accent);
-      box-shadow: 0 0 10px var(--btn-glow);
-      transform: scale(0.91);
+    .touch-btn.pressed {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      transform: scale(0.92);
+      border-color: rgba(255,255,255,0.3);
+      box-shadow: 0 0 15px rgba(255,255,255,0.1);
     }
 
-    /* ── SHOULDER STRIP ── top edge, L left R right */
-    .sh {
-      width: 76px; height: 26px;
-      border-radius: 4px 4px var(--radius-sm) var(--radius-sm);
-      font-size: 10px; letter-spacing: 0.08em;
-      top: 0;
+    .group-left {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between;
+      position: relative;
     }
-    #tb-L { left: 12px; }
-    #tb-R { right: 12px; }
 
-    /* ── Z TRIGGER ── center-top between L and R */
-    #tb-Z {
-      position: absolute;
-      left: 50%; top: 0;
-      transform: translateX(-50%);
-      width: 44px; height: 26px;
-      border-radius: 13px;
-      font-size: 9px; letter-spacing: 0.1em;
+    .shoulder-row {
+      display: flex; gap: 12px;
+      width: 100%; justify-content: center;
+      margin-bottom: 8px;
     }
-    #tb-Z.pressed { transform: translateX(-50%) scale(0.91); }
+    .btn-shoulder {
+      width: 60px; height: 32px;
+      border-radius: 16px;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.5px;
+    }
 
-    /* ── JOYSTICK ── left side, large circular zone */
-    /* The joystick is a 4-direction touch area with a visual circle */
-    .joystick {
-      position: absolute;
-      left: 12px;
-      top: 34px;
-      width: 110px; height: 110px;
+    .analog-area {
+      position: relative;
+      width: 140px; height: 140px;
+      margin-bottom: 10px;
     }
-    /* Outer ring */
-    .joystick-ring {
+    .stick-base {
       position: absolute; inset: 0;
       border-radius: 50%;
       background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
-      pointer-events: none;
+      border: 1px solid var(--glass-border);
     }
-    /* Inner nub */
-    .joystick-nub {
+    .stick-nub {
       position: absolute;
-      width: 36px; height: 36px;
       top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
+      width: 50px; height: 50px;
+      margin: -25px 0 0 -25px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
       pointer-events: none;
-      transition: transform 0.06s;
+      transition: transform 0.05s linear;
     }
-    /* 4 invisible tap zones inside the joystick */
-    .jz {
-      position: absolute;
-      border-radius: 50%;
-      background: transparent;
-      border: none;
-    }
-    .jz.up    { top: 0;    left: 20%;  width: 60%; height: 50%; }
-    .jz.down  { bottom: 0; left: 20%;  width: 60%; height: 50%; }
-    .jz.left  { top: 20%;  left: 0;    width: 50%; height: 60%; }
-    .jz.right { top: 20%;  right: 0;   width: 50%; height: 60%; }
-    /* nub shift on press */
-    .joystick.pressed-up    .joystick-nub { transform: translate(-50%, calc(-50% - 8px)); }
-    .joystick.pressed-down  .joystick-nub { transform: translate(-50%, calc(-50% + 8px)); }
-    .joystick.pressed-left  .joystick-nub { transform: translate(calc(-50% - 8px), -50%); }
-    .joystick.pressed-right .joystick-nub { transform: translate(calc(-50% + 8px), -50%); }
+    .analog-area.active .stick-nub { background: var(--acc); box-shadow: 0 0 20px var(--acc-glow); border-color: transparent; }
 
-    /* ── D-PAD ── lower-left, N64 real dpad position */
     .dpad {
-      position: absolute;
-      left: 12px; bottom: max(14px, env(safe-area-inset-bottom));
-      width: 108px; height: 108px;
-    }
-    .dp {
-      position: absolute;
-      width: 36px; height: 36px;
-    }
-    .dp-center {
-      width: 36px; height: 36px;
-      position: absolute;
-      top: 36px; left: 36px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--border);
-      pointer-events: none;
-    }
-    .dp.up    { top: 0;    left: 36px; border-radius: var(--radius-sm) var(--radius-sm) 2px 2px; }
-    .dp.down  { top: 72px; left: 36px; border-radius: 2px 2px var(--radius-sm) var(--radius-sm); }
-    .dp.left  { top: 36px; left: 0;    border-radius: var(--radius-sm) 2px 2px var(--radius-sm); }
-    .dp.right { top: 36px; left: 72px; border-radius: 2px var(--radius-sm) var(--radius-sm) 2px; }
-    .dp::after {
-      content: '';
-      display: block;
-      width: 7px; height: 7px;
-      border-right: 2px solid currentColor;
-      border-bottom: 2px solid currentColor;
-      opacity: 0.5;
-    }
-    .dp.up::after    { transform: rotate(-135deg) translate(-1px, 1px); }
-    .dp.down::after  { transform: rotate(45deg) translate(-1px, -1px); }
-    .dp.left::after  { transform: rotate(135deg) translate(1px, -1px); }
-    .dp.right::after { transform: rotate(-45deg) translate(-1px, -1px); }
-    .dp.pressed::after { opacity: 1; }
-
-    /* ── START ── center bottom */
-    #tb-START {
-      position: absolute;
-      left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      width: 64px; height: 24px;
-      border-radius: 12px;
-      font-size: 9px; letter-spacing: 0.12em;
-    }
-    #tb-START.pressed { transform: translateX(-50%) scale(0.91); }
-
-    /* ── C BUTTONS ── right-center, N64 gold tint */
-    .cpad {
-      position: absolute;
-      right: 116px; top: 34px;
-      width: 86px; height: 86px;
-    }
-    .cp {
-      position: absolute;
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      color: #c8a840;
-      border-color: rgba(200,168,64,0.18) !important;
-    }
-    .cp.up    { top: 0;    left: 30px; }
-    .cp.down  { bottom: 0; left: 30px; }
-    .cp.left  { top: 30px; left: 0; }
-    .cp.right { top: 30px; right: 0; }
-    .cp.pressed {
-      background: rgba(200,168,64,0.15);
-      border-color: #c8a840 !important;
-      box-shadow: 0 0 8px rgba(200,168,64,0.3);
-      transform: scale(0.91);
-    }
-    .cp::before {
-      content: 'C';
-      position: absolute;
-      font-size: 6px; font-family: 'DM Mono', monospace;
-      opacity: 0.4; top: 1px; left: 50%; transform: translateX(-50%);
-    }
-    .cp::after {
-      content: '';
-      display: block;
-      width: 5px; height: 5px;
-      border-right: 1.5px solid currentColor;
-      border-bottom: 1.5px solid currentColor;
-      position: absolute; top: 50%; left: 50%;
-    }
-    .cp.up::after    { transform: translate(-50%, -30%) rotate(-135deg); }
-    .cp.down::after  { transform: translate(-50%, -70%) rotate(45deg); }
-    .cp.left::after  { transform: translate(-30%, -50%) rotate(135deg); }
-    .cp.right::after { transform: translate(-70%, -50%) rotate(-45deg); }
-
-    /* ── A / B BUTTONS ── right side, N64 style */
-    /* A is large, B is medium, no X/Y */
-    .abtns {
-      position: absolute;
-      right: 12px; top: 34px;
-      width: 100px; height: 110px;
-    }
-    .ab {
-      position: absolute;
-      border-radius: 50%;
-      font-size: 13px; font-weight: 500;
-    }
-    /* A: large, centre-right. B: smaller, lower-left */
-    .ab.a { width: 56px; height: 56px; top: 28px; right: 0; }
-    .ab.b { width: 44px; height: 44px; bottom: 0; left: 0; }
-    .ab.a.pressed { --accent: #ff6b6b; --accent-dim: rgba(255,107,107,0.12); --btn-glow: rgba(255,107,107,0.25); }
-    .ab.b.pressed { --accent: #ffd93d; --accent-dim: rgba(255,217,61,0.12);  --btn-glow: rgba(255,217,61,0.25); }
-
-    /* ─── SETTINGS PANEL ──────────────────────────── */
-    #panel {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.92);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      z-index: 100;
-      display: flex; align-items: flex-end; justify-content: center;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.2s;
-    }
-    #panel.open { opacity: 1; pointer-events: auto; }
-
-    .panel-sheet {
-      width: 100%; max-width: 520px;
-      background: #000;
-      border: 1px solid var(--border);
-      border-bottom: none;
-      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-      padding: 24px 24px max(24px, env(safe-area-inset-bottom));
-      transform: translateY(20px);
-      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
-    }
-    #panel.open .panel-sheet { transform: translateY(0); }
-
-    .panel-handle {
-      width: 36px; height: 4px;
-      background: rgba(255,255,255,0.12);
-      border-radius: 2px;
-      margin: 0 auto 20px;
-    }
-    .panel-title {
-      font-size: 16px; font-weight: 500;
-      margin-bottom: 20px;
-      color: var(--fg);
-    }
-
-    .setting-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      gap: 16px;
-    }
-    .setting-row:last-child { border-bottom: none; }
-    .setting-label { font-size: 13px; color: var(--muted); }
-    .setting-label strong { display: block; color: var(--fg); font-weight: 400; margin-bottom: 2px; }
-
-    /* toggle switch */
-    .toggle {
+      width: 100px; height: 100px;
       position: relative;
-      width: 42px; height: 24px;
-      flex-shrink: 0;
-      cursor: pointer;
     }
-    .toggle input { display: none; }
-    .toggle-track {
-      position: absolute; inset: 0;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      transition: background 0.2s, border-color 0.2s;
+    .dpad-btn { position: absolute; width: 34px; height: 34px; border-radius: 6px; }
+    .dpad-btn.up { top: 0; left: 33px; border-radius: 6px 6px 2px 2px; }
+    .dpad-btn.down { bottom: 0; left: 33px; border-radius: 2px 2px 6px 6px; }
+    .dpad-btn.left { top: 33px; left: 0; border-radius: 6px 2px 2px 6px; }
+    .dpad-btn.right { top: 33px; right: 0; border-radius: 2px 6px 6px 2px; }
+    .dpad-center {
+      position: absolute; top: 33px; left: 33px; width: 34px; height: 34px;
+      background: var(--glass); pointer-events: none;
     }
-    .toggle-thumb {
+
+    .group-center {
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 30px;
+    }
+    .btn-start {
+      width: 70px; height: 26px;
+      border-radius: 13px;
+      font-size: 10px; font-weight: 700; color: #ff6b6b;
+      letter-spacing: 1px;
+    }
+
+    .group-right {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between;
+    }
+    .btn-r { width: 60px; height: 32px; border-radius: 16px; font-size: 12px; font-weight: 700; }
+
+    .actions-grid {
+      position: relative;
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+
+    .c-group {
       position: absolute;
-      width: 18px; height: 18px;
-      background: var(--muted);
+      top: 10px; right: 20px;
+      width: 80px; height: 80px;
+    }
+    .btn-c {
+      position: absolute; width: 24px; height: 24px;
       border-radius: 50%;
-      top: 2px; left: 2px;
-      transition: transform 0.2s, background 0.2s;
+      font-size: 8px; font-weight: 700;
+      color: var(--c-btn); border-color: rgba(240, 189, 0, 0.2);
     }
-    .toggle input:checked ~ .toggle-track { background: var(--accent-dim); border-color: var(--accent); }
-    .toggle input:checked ~ .toggle-thumb { background: var(--accent); transform: translateX(18px); }
+    .btn-c.pressed { background: var(--c-btn); color: #000; }
+    .c-up { top: 0; left: 28px; }
+    .c-down { bottom: 0; left: 28px; }
+    .c-left { top: 28px; left: 0; }
+    .c-right { top: 28px; right: 0; }
 
-    /* key bindings table */
-    .keytable {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 12px;
+    .ab-group {
+      position: absolute;
+      bottom: 0; right: 10px;
+      width: 110px; height: 100px;
     }
-    .keytable td { padding: 5px 0; }
-    .keytable td:first-child { color: rgba(255,255,255,0.5); width: 60px; }
-    .keytable td:last-child { color: rgba(255,255,255,0.25); text-align: right; }
+    .btn-circle {
+      position: absolute; border-radius: 50%;
+      font-weight: 700; font-size: 18px;
+    }
+    .btn-a {
+      width: 55px; height: 55px;
+      bottom: 25px; right: 0;
+      color: #9bb0ff; border-color: rgba(73, 105, 230, 0.3);
+      z-index: 1;
+    }
+    .btn-a.pressed { background: var(--a-btn); color: #fff; border-color: var(--a-btn); }
 
-    kbd {
-      display: inline-block;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 3px;
-      padding: 1px 5px;
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      color: var(--fg);
+    .btn-b {
+      width: 45px; height: 45px;
+      bottom: 0; right: 65px;
+      color: #8affae; border-color: rgba(42, 168, 80, 0.3);
+      z-index: 2;
     }
+    .btn-b.pressed { background: var(--b-btn); color: #fff; border-color: var(--b-btn); }
 
-    .btn-row {
-      display: flex; gap: 8px; margin-top: 16px;
+    .settings-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+      z-index: 100; align-items: center; justify-content: center;
     }
-    .btn-sm {
-      padding: 9px 16px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--fg);
-      font-size: 12px;
-      font-family: 'DM Mono', monospace;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+    .settings-modal.active { display: flex; }
+    .settings-card {
+      width: 90%; max-width: 400px;
+      background: #111; border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg); padding: 24px;
     }
-    .btn-sm:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
-    .btn-sm.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-    .btn-sm.primary:hover { background: rgba(200,245,96,0.2); }
+    .settings-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--fg); display: flex; justify-content: space-between;}
+    .close-tag { opacity: 0.5; cursor: pointer; }
 
-    /* ─── LANDSCAPE ADJUSTMENTS ───────────────────── */
+    .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .toggle {
+      width: 44px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 12px; position: relative; cursor: pointer; transition: 0.2s;
+    }
+    .toggle::after {
+      content:''; position: absolute; top:2px; left:2px; width:20px; height:20px; background: #fff; border-radius:50%; transition: 0.2s;
+    }
+    .toggle.active { background: var(--acc); }
+    .toggle.active::after { transform: translateX(20px); }
+
     @media (orientation: landscape) {
-      body {
-        grid-template-columns: 200px 1fr 200px;
-        grid-template-rows: 1fr;
-        grid-template-areas: "controls screen controls2";
-      }
-      /* Use pseudo-element trick: duplicate controls on right not supported,
-         instead use a simpler approach: controls on left+right as overlays */
-      body {
-        display: flex;
-        flex-direction: row;
-      }
-      #topbar { display: none; }
-      #screen-area {
-        flex: 1 1 auto;
-        order: 2;
-        padding: 6px;
-      }
-      .canvas-wrap {
-        width: 100%;
-        height: 100%;
-        aspect-ratio: 4/3;
-        max-height: 100%;
-        max-width: calc(100dvh * 4/3);
-      }
-      #controls {
-        flex: 0 0 190px;
-        height: 100dvh;
-        order: 1;
-        padding: 8px 6px;
-        padding-top: max(8px, env(safe-area-inset-top));
-        padding-bottom: max(8px, env(safe-area-inset-bottom));
-        padding-left: max(6px, env(safe-area-inset-left));
-      }
-      /* In landscape, reposition all elements for a side-panel layout */
-      .dpad {
-        left: 10px; top: 50%;
-        transform: translateY(-50%);
-      }
-      .sh { width: 70px; height: 24px; }
-      #tb-L { left: 10px; top: 4px; }
-      #tb-R { right: 10px; top: 4px; }
-      .zbtn { top: 4px; }
-      /* Move action buttons, C buttons, start to right panel via a second controls div */
-      .abtns { right: 8px; }
-      .cpad { right: 144px; }
-      .cbtns { bottom: max(12px, env(safe-area-inset-bottom)); left: 50%; }
-    }
+      body { flex-direction: row; }
+      .top-bar { display: none; }
 
-    /* ─── DESKTOP ──────────────────────────────────── */
-    @media (pointer: fine) and (min-width: 600px) {
-      #controls { opacity: 0.3; transition: opacity 0.3s; }
-      #controls:hover { opacity: 1; }
+      .game-container {
+        height: 100vh; max-height: 100vh;
+        width: 100%;
+        order: 1;
+        padding: 0;
+      }
+      .screen-wrapper {
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        max-width: none;
+        aspect-ratio: auto;
+        width: 100%;
+      }
+
+      .controls-area {
+        height: 100vh; width: 100vw; max-height: 100vh;
+        position: absolute; inset: 0; pointer-events: none;
+        grid-template-columns: 1fr 1fr;
+        padding: 20px;
+        gap: 0;
+        order: 2;
+      }
+      .controls-area > * { pointer-events: auto; }
+
+      .group-left { position: absolute; bottom: 30px; left: 40px; align-items: flex-start; }
+      .group-center { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
+      .group-right { position: absolute; bottom: 30px; right: 40px; align-items: flex-end; }
+
+      .shoulder-row { width: auto; gap: 15px; margin-bottom: 20px; }
+      .analog-area { width: 160px; height: 160px; margin-bottom: 20px; }
+      .dpad { display: none; }
+
+      .c-group { top: -90px; right: 10px; }
+      .ab-group { bottom: 0; right: 0; }
     }
   </style>
 </head>
 <body>
 
-<!-- FLOATING ACTIONS (top-right) -->
-<div id="topbar">
-  <label class="icon-btn" for="romInput" title="Load ROM">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-    </svg>
-  </label>
-  <input type="file" id="romInput" accept=".z64,.n64,.v64,.zip,application/octet-stream">
-
-  <div class="icon-btn" id="btnSave" title="Save State">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-    </svg>
-  </div>
-
-  <div class="icon-btn" id="btnSettings" title="Settings">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-    </svg>
-  </div>
-</div>
-
-<!-- SCREEN -->
-<div id="screen-area">
-  <div class="canvas-wrap">
-    <canvas id="canvas" tabindex="1" oncontextmenu="return false;"></canvas>
-    <div class="scanlines" id="scanlines"></div>
-    <div class="idle-hint" id="idleHint">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-      </svg>
-      load a rom to begin
+  <div class="top-bar">
+    <label class="icon-btn" title="Load ROM">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      <input type="file" id="romInput" accept=".z64,.n64,.v64,.zip,application/octet-stream">
+    </label>
+    <div class="icon-btn" id="btnSettings" title="Settings">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     </div>
-  </div>
-</div>
-
-<!-- TOUCH CONTROLS -->
-<div id="controls">
-
-  <!-- Shoulder buttons -->
-  <div class="tb sh" id="tb-L" data-action="L">L</div>
-  <div class="tb sh" id="tb-R" data-action="R">R</div>
-
-  <!-- Z trigger -->
-  <div class="tb" id="tb-Z" data-action="Z">Z</div>
-
-  <!-- Joystick (left, primary movement) -->
-  <div class="joystick" id="joystick">
-    <div class="joystick-ring"></div>
-    <div class="joystick-nub"></div>
-    <div class="tb jz up"    id="tb-JU"    data-action="UP"></div>
-    <div class="tb jz down"  id="tb-JD"    data-action="DOWN"></div>
-    <div class="tb jz left"  id="tb-JL"    data-action="LEFT"></div>
-    <div class="tb jz right" id="tb-JR"    data-action="RIGHT"></div>
+    <div class="icon-btn" id="btnDebug" title="Toggle input debug" style="font-size:16px;">🐛</div>
   </div>
 
-  <!-- D-Pad (lower-left, secondary) -->
-  <div class="dpad">
-    <div class="tb dp up"    id="tb-DU"    data-action="UP"></div>
-    <div class="tb dp down"  id="tb-DD"    data-action="DOWN"></div>
-    <div class="tb dp left"  id="tb-DL"    data-action="LEFT"></div>
-    <div class="tb dp right" id="tb-DR"    data-action="RIGHT"></div>
-    <div class="dp-center"></div>
-  </div>
-
-  <!-- Start button -->
-  <div class="tb" id="tb-START" data-action="START">START</div>
-
-  <!-- C Buttons (right-centre, gold) -->
-  <div class="cpad">
-    <div class="tb cp up"    id="tb-CU" data-action="CU"></div>
-    <div class="tb cp down"  id="tb-CD" data-action="CD"></div>
-    <div class="tb cp left"  id="tb-CL" data-action="CL"></div>
-    <div class="tb cp right" id="tb-CR" data-action="CR"></div>
-  </div>
-
-  <!-- A and B buttons only (no X/Y on N64) -->
-  <div class="abtns">
-    <div class="tb ab a" id="tb-A" data-action="A">A</div>
-    <div class="tb ab b" id="tb-B" data-action="B">B</div>
-  </div>
-
-</div>
-
-<!-- SETTINGS PANEL -->
-<div id="panel">
-  <div class="panel-sheet">
-    <div class="panel-handle"></div>
-    <div class="panel-title">Settings</div>
-
-    <div class="setting-row">
-      <div class="setting-label">
-        <strong>Scanlines</strong>
-        CRT effect overlay
+  <div class="game-container">
+    <div class="screen-wrapper">
+      <canvas id="canvas" tabindex="1"></canvas>
+      <div class="scanlines" id="scanlines"></div>
+      <div class="idle-hint" id="idleHint">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:12px;opacity:0.3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        LOAD A ROM TO PLAY
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggleScanlines">
-        <div class="toggle-track"></div>
-        <div class="toggle-thumb"></div>
-      </label>
+      <!-- Debug overlay: shows live gamepad state. Toggle with the bug button. -->
+      <div id="debugOverlay" style="display:none;position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:10px;font-family:monospace;color:#0f0;background:rgba(0,0,0,0.7);padding:4px;z-index:10;pointer-events:none;"></div>
     </div>
+  </div>
 
-    <div class="setting-row">
-      <div class="setting-label">
-        <strong>Keyboard Bindings</strong>
+  <div class="controls-area" id="controls">
+    <div class="group-left">
+      <div class="shoulder-row">
+        <div class="touch-btn btn-shoulder" data-action="L">L</div>
+        <div class="touch-btn btn-shoulder" data-action="Z">Z</div>
+      </div>
+      <div class="analog-area" id="analogStick">
+        <div class="stick-base"></div>
+        <div class="stick-nub"></div>
+      </div>
+      <div class="dpad">
+        <div class="dpad-center"></div>
+        <div class="touch-btn dpad-btn up" data-action="DUP"></div>
+        <div class="touch-btn dpad-btn down" data-action="DDOWN"></div>
+        <div class="touch-btn dpad-btn left" data-action="DLEFT"></div>
+        <div class="touch-btn dpad-btn right" data-action="DRIGHT"></div>
       </div>
     </div>
-    <table class="keytable">
-      <tr><td>Stick/D-Pad</td><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Arrow Keys</td></tr>
-      <tr><td>A</td><td><kbd>X</kbd></td><td>Primary</td></tr>
-      <tr><td>B</td><td><kbd>Z</kbd></td><td>Secondary</td></tr>
-      <tr><td>C ↑↓←→</td><td><kbd>I</kbd> <kbd>K</kbd> <kbd>J</kbd> <kbd>L</kbd></td><td>C Buttons</td></tr>
-      <tr><td>L / R</td><td><kbd>Q</kbd> / <kbd>W</kbd></td><td>Shoulders</td></tr>
-      <tr><td>Z</td><td><kbd>E</kbd></td><td>Z Trigger</td></tr>
-      <tr><td>Start</td><td><kbd>Enter</kbd></td><td></td></tr>
-    </table>
-
-    <div class="btn-row">
-      <button class="btn-sm primary" onclick="Module && Module.requestFullScreen && Module.requestFullScreen(true,false)">Fullscreen</button>
-      <button class="btn-sm" onclick="closePanel()">Close</button>
+    <div class="group-center">
+      <div class="touch-btn btn-start" data-action="START">START</div>
+    </div>
+    <div class="group-right">
+      <div class="shoulder-row" style="justify-content: flex-end; width:100%">
+        <div class="touch-btn btn-r" data-action="R">R</div>
+      </div>
+      <div class="actions-grid">
+        <div class="c-group">
+          <div class="touch-btn btn-c c-up" data-action="CU">C▲</div>
+          <div class="touch-btn btn-c c-down" data-action="CD">C▼</div>
+          <div class="touch-btn btn-c c-left" data-action="CL">C◀</div>
+          <div class="touch-btn btn-c c-right" data-action="CR">C▶</div>
+        </div>
+        <div class="ab-group">
+          <div class="touch-btn btn-circle btn-a" data-action="A">A</div>
+          <div class="touch-btn btn-circle btn-b" data-action="B">B</div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
+
+  <div class="settings-modal" id="settingsModal">
+    <div class="settings-card">
+      <div class="settings-title">
+        Settings
+        <span class="close-tag" onclick="toggleSettings()">×</span>
+      </div>
+      <div class="setting-row">
+        <span>Scanlines</span>
+        <div class="toggle" id="toggleScanlines"></div>
+      </div>
+      <div class="setting-row">
+        <span>Resolution</span>
+        <select id="resSelect" style="background:#222;color:#fff;border:1px solid #333;border-radius:8px;padding:4px 8px;font-size:12px;">
+          <option value="1">640×480 (Native)</option>
+          <option value="2" selected>1280×960 (2×)</option>
+          <option value="3">1920×1440 (3×)</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <span>Save State</span>
+        <button class="touch-btn" style="padding: 4px 12px; border-radius: 8px; font-size:12px;" id="btnSaveState">Save</button>
+      </div>
+      <div style="margin-top:16px;border-top:1px solid var(--glass-border);padding-top:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+          Button Remap
+          <button onclick="resetRemap()" style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);color:#ff8888;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;">Reset</button>
+        </div>
+        <div id="remapLabel" style="font-size:11px;color:var(--acc);min-height:16px;margin-bottom:8px;text-align:center;"></div>
+        <div id="remapTable" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;"></div>
+      </div>
+    </div>
+  </div>
 
 <script>
 // ═══════════════════════════════════════════════════
-//  INPUT SYSTEM
-//  Unified keyboard + touch → synthetic KeyboardEvent
-//  dispatched to both window and canvas so Emscripten
-//  JSEvents picks them up regardless of focus state.
+//  CANVAS RESOLUTION FIX
+//  Set the canvas pixel buffer to the actual N64 output
+//  resolution. The CSS will scale it to fit the container.
+//  The libretro core respects Module.canvas width/height.
+// ═══════════════════════════════════════════════════
+const canvas = document.getElementById('canvas');
+let resMultiplier = 2; // Default 2× (1280×960)
+
+function setCanvasResolution(mult) {
+  resMultiplier = mult;
+  canvas.width  = 640 * mult;
+  canvas.height = 480 * mult;
+}
+setCanvasResolution(resMultiplier);
+
+document.getElementById('resSelect').addEventListener('change', function() {
+  setCanvasResolution(parseInt(this.value));
+});
+
+// ═══════════════════════════════════════════════════
+//  VIRTUAL GAMEPAD — MULTI-LAYER INPUT SYSTEM
+//
+//  mupen64plus_next WASM uses THREE input paths depending
+//  on how it was compiled. We cover all three:
+//
+//  LAYER 1: navigator.getGamepads() override
+//    — Most libretro WASM cores poll this directly via
+//      Emscripten's SDL2 gamepad layer.
+//
+//  LAYER 2: Emscripten SDL2 internal state injection
+//    — After Module initializes, SDL2.gamepadTimestamp is
+//      patched so the core sees fresh input every frame.
+//      We also hook Module.SDL2.gamepad.* if exposed.
+//
+//  LAYER 3: Keyboard events (fallback)
+//    — Some core builds fall back to SDL keyboard input.
+//      We fire both keydown AND the gamepad path.
+//
+//  RETROPAD → N64 BUTTON MAP (mupen64plus_next default):
+//   buttons[0]  = RetroPad B     → N64 A button
+//   buttons[1]  = RetroPad Y     → N64 B button
+//   buttons[2]  = RetroPad Select
+//   buttons[3]  = RetroPad Start → N64 Start
+//   buttons[4]  = D-Up           → N64 D-Up
+//   buttons[5]  = D-Down         → N64 D-Down
+//   buttons[6]  = D-Left         → N64 D-Left
+//   buttons[7]  = D-Right        → N64 D-Right
+//   buttons[8]  = RetroPad A     → N64 C-Down (alt)
+//   buttons[9]  = RetroPad X     → N64 C-Left (alt)
+//   buttons[10] = L              → N64 L shoulder
+//   buttons[11] = R              → N64 R shoulder
+//   buttons[12] = L2             → N64 Z trigger
+//   buttons[13] = R2
+//   buttons[14] = L3
+//   buttons[15] = R3
+//   axes[0] = Left stick X       → N64 Analog X
+//   axes[1] = Left stick Y       → N64 Analog Y
+//   axes[2] = Right stick X      → N64 C-Left/Right
+//   axes[3] = Right stick Y      → N64 C-Up/Down
 // ═══════════════════════════════════════════════════
 
-// Action → { key, keyCode, code }
-const BINDINGS = {
-  UP:    { key: 'ArrowUp',    keyCode: 38, code: 'ArrowUp'    },
-  DOWN:  { key: 'ArrowDown',  keyCode: 40, code: 'ArrowDown'  },
-  LEFT:  { key: 'ArrowLeft',  keyCode: 37, code: 'ArrowLeft'  },
-  RIGHT: { key: 'ArrowRight', keyCode: 39, code: 'ArrowRight' },
-  A:     { key: 'x',          keyCode: 88, code: 'KeyX'       },
-  B:     { key: 'z',          keyCode: 90, code: 'KeyZ'       },
-  L:     { key: 'q',          keyCode: 81, code: 'KeyQ'       },
-  R:     { key: 'w',          keyCode: 87, code: 'KeyW'       },
-  Z:     { key: 'e',          keyCode: 69, code: 'KeyE'       },
-  START: { key: 'Enter',      keyCode: 13, code: 'Enter'      },
-  CU:    { key: 'i',          keyCode: 73, code: 'KeyI'       },
-  CD:    { key: 'k',          keyCode: 75, code: 'KeyK'       },
-  CL:    { key: 'j',          keyCode: 74, code: 'KeyJ'       },
-  CR:    { key: 'l',          keyCode: 76, code: 'KeyL'       },
+const NUM_BUTTONS = 17; // indices 0-15 + 1 spare
+const NUM_AXES    = 4;
+
+// Live state — mutated directly, no copying until poll
+const gpButtons = new Float64Array(NUM_BUTTONS);
+const gpAxes    = new Float64Array(NUM_AXES);
+
+// Action → gamepad mapping
+// These are editable via the Remap UI in settings.
+// Saved to localStorage so they persist across reloads.
+const DEFAULT_MAP = {
+  A:      { type: 'button', index: 0  },
+  B:      { type: 'button', index: 1  },
+  START:  { type: 'button', index: 9  },
+  L:      { type: 'button', index: 4  },
+  R:      { type: 'button', index: 5  },
+  Z:      { type: 'button', index: 6  },
+  DUP:    { type: 'button', index: 12 },
+  DDOWN:  { type: 'button', index: 13 },
+  DLEFT:  { type: 'button', index: 14 },
+  DRIGHT: { type: 'button', index: 15 },
+  CU:     { type: 'axis',   index: 3, value: -1 },
+  CD:     { type: 'axis',   index: 3, value:  1 },
+  CL:     { type: 'axis',   index: 2, value: -1 },
+  CR:     { type: 'axis',   index: 2, value:  1 },
 };
 
-// Keys currently held (action name → true)
-const held = {};
+function loadMap() {
+  try {
+    const saved = localStorage.getItem('lemon64_map');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_MAP));
+  } catch(_) { return JSON.parse(JSON.stringify(DEFAULT_MAP)); }
+}
+function saveMap() {
+  try { localStorage.setItem('lemon64_map', JSON.stringify(ACTION_MAP)); } catch(_) {}
+}
+const ACTION_MAP = loadMap();
 
-function fireKey(action, type) {
-  const b = BINDINGS[action];
-  if (!b) return;
-  const opts = {
-    key: b.key, code: b.code,
-    keyCode: b.keyCode, which: b.keyCode,
-    bubbles: true, cancelable: true,
-    shiftKey: b.key === 'Shift',
-  };
-  const ev = new KeyboardEvent(type, opts);
-  // Dispatch to window first (where RetroArch/Emscripten listens)
-  window.dispatchEvent(ev);
-  // Also dispatch to canvas directly for safety
-  const cvs = document.getElementById('canvas');
-  if (cvs) cvs.dispatchEvent(new KeyboardEvent(type, opts));
+// ── REMAP MODE ─────────────────────────────────────
+// When active, the next physical gamepad button press
+// gets assigned to the pending action.
+let remapPending = null; // action name waiting for assignment
+
+function startRemap(action) {
+  remapPending = action;
+  const label = document.getElementById('remapLabel');
+  if (label) label.textContent = `Press the button for: ${action}`;
 }
 
-function updateJoystickNub() {
-  const joy = document.getElementById('joystick');
-  if (!joy) return;
-  joy.classList.remove('pressed-up','pressed-down','pressed-left','pressed-right');
-  if (held['UP'])    joy.classList.add('pressed-up');
-  if (held['DOWN'])  joy.classList.add('pressed-down');
-  if (held['LEFT'])  joy.classList.add('pressed-left');
-  if (held['RIGHT']) joy.classList.add('pressed-right');
+function cancelRemap() {
+  remapPending = null;
+  const label = document.getElementById('remapLabel');
+  if (label) label.textContent = '';
 }
+
+// Poll physical gamepad to detect button presses for remapping
+setInterval(() => {
+  if (!remapPending) return;
+  try {
+    const pads = _origGetGamepads();
+    const pad = pads[0] || pads[1] || pads[2] || pads[3];
+    if (!pad) return;
+    for (let i = 0; i < pad.buttons.length; i++) {
+      if (pad.buttons[i].pressed) {
+        ACTION_MAP[remapPending] = { type: 'button', index: i };
+        saveMap();
+        const label = document.getElementById('remapLabel');
+        if (label) label.textContent = `✓ ${remapPending} → button ${i}`;
+        remapPending = null;
+        renderRemapTable();
+        setTimeout(() => { if (label) label.textContent = ''; }, 1500);
+        return;
+      }
+    }
+  } catch(_) {}
+}, 50);
+
+// Track held axis directions to resolve conflicts
+const axisHeld = { 2: {'-1':false,'1':false}, 3: {'-1':false,'1':false} };
 
 function pressAction(action) {
-  if (held[action]) return;
-  held[action] = true;
-  const el = document.getElementById('tb-' + action);
-  if (el) el.classList.add('pressed');
-  fireKey(action, 'keydown');
-  updateJoystickNub();
+  const m = ACTION_MAP[action];
+  if (!m) return;
+  if (m.type === 'button') {
+    gpButtons[m.index] = 1;
+  } else {
+    axisHeld[m.index][String(m.value)] = true;
+    recomputeAxis(m.index);
+  }
+  document.querySelectorAll(`[data-action="${action}"]`).forEach(el => el.classList.add('pressed'));
+  if (navigator.vibrate) navigator.vibrate(8);
+  updateDebug();
 }
 
 function releaseAction(action) {
-  if (!held[action]) return;
-  held[action] = false;
-  const el = document.getElementById('tb-' + action);
-  if (el) el.classList.remove('pressed');
-  fireKey(action, 'keyup');
-  updateJoystickNub();
-}
-
-// ── Touch handling ──────────────────────────────────
-// Track which action each touch identifier is holding.
-const touchMap = new Map(); // touchId → action
-
-function getTouchAction(target) {
-  // Walk up to find a [data-action] element
-  let el = target;
-  while (el && el !== document.body) {
-    if (el.dataset && el.dataset.action) return el.dataset.action;
-    el = el.parentElement;
+  const m = ACTION_MAP[action];
+  if (!m) return;
+  if (m.type === 'button') {
+    gpButtons[m.index] = 0;
+  } else {
+    axisHeld[m.index][String(m.value)] = false;
+    recomputeAxis(m.index);
   }
-  return null;
+  document.querySelectorAll(`[data-action="${action}"]`).forEach(el => el.classList.remove('pressed'));
+  updateDebug();
 }
 
-document.getElementById('controls').addEventListener('touchstart', e => {
+function recomputeAxis(i) {
+  const neg = axisHeld[i]['-1'], pos = axisHeld[i]['1'];
+  gpAxes[i] = (neg && pos) ? 0 : neg ? -1 : pos ? 1 : 0;
+}
+
+// ── LAYER 1: navigator.getGamepads() override ──────
+function buildFakeGamepad() {
+  return {
+    id: 'Xbox 360 Controller (XInput STANDARD GAMEPAD)',  // ID that cores trust
+    index: 0,
+    connected: true,
+    timestamp: performance.now(),
+    mapping: 'standard',
+    axes: Array.from(gpAxes),
+    buttons: Array.from(gpButtons).map(v => ({
+      pressed: v >= 1,
+      touched: v >= 1,
+      value:   v,
+    })),
+  };
+}
+
+const _origGetGamepads = navigator.getGamepads
+  ? navigator.getGamepads.bind(navigator)
+  : () => [];
+
+Object.defineProperty(navigator, 'getGamepads', {
+  value: function() {
+    const gp = buildFakeGamepad();
+    // Also inject into SDL2 layer if available (Layer 2)
+    injectSDL2(gp);
+    return [gp, null, null, null];
+  },
+  writable: true,
+  configurable: true,
+});
+
+// ── LAYER 2: Emscripten SDL2 internal injection ───
+// Emscripten SDL2 caches gamepad state in JS objects.
+// We overwrite them each frame so the core sees our input.
+function injectSDL2(gp) {
+  try {
+    const sdl2 = window.SDL2 || (window.Module && window.Module.SDL2);
+    if (!sdl2 || !sdl2.game_controllers) return;
+    // SDL2 stores game controllers in a dict keyed by index
+    const ctrl = sdl2.game_controllers[0] ||
+                 sdl2.game_controllers['0'];
+    if (!ctrl) return;
+    // Overwrite axes and buttons in-place
+    if (ctrl.axes) {
+      for (let i = 0; i < gpAxes.length; i++) ctrl.axes[i] = gpAxes[i];
+    }
+    if (ctrl.buttons) {
+      for (let i = 0; i < gpButtons.length; i++) {
+        ctrl.buttons[i] = gpButtons[i] >= 1 ? 1 : 0;
+      }
+    }
+    if (ctrl.timestamp !== undefined) ctrl.timestamp = performance.now();
+  } catch(_) {}
+}
+
+// ── Fire gamepadconnected at the right moment ──────
+// We fire it: (a) immediately, (b) after Module runtime
+// init, and (c) after ROM loads. Belt-and-suspenders.
+function fireGamepadConnected() {
+  try {
+    const ev = new Event('gamepadconnected');
+    ev.gamepad = buildFakeGamepad();
+    window.dispatchEvent(ev);
+    console.log('[LemonN64] gamepadconnected fired');
+  } catch(_) {}
+}
+// Fire immediately in case core is already listening
+setTimeout(fireGamepadConnected, 100);
+setTimeout(fireGamepadConnected, 1000);
+
+// ── DEBUG OVERLAY ──────────────────────────────────
+let debugVisible = false;
+function updateDebug() {
+  const el = document.getElementById('debugOverlay');
+  if (!el || !debugVisible) return;
+  const btns = Array.from(gpButtons).map((v,i) => v ? `B${i}` : '').filter(Boolean);
+  const axes = Array.from(gpAxes).map((v,i) => `A${i}:${v.toFixed(2)}`);
+  el.textContent = `BTN:[${btns.join(' ')}]  AX:[${axes.join(' ')}]`;
+}
+
+// ═══════════════════════════════════════════════════
+//  ANALOG STICK — maps to axes[0] (X) and axes[1] (Y)
+// ═══════════════════════════════════════════════════
+const stickEl = document.getElementById('analogStick');
+const nub = stickEl.querySelector('.stick-nub');
+let stickTouchId = null;
+const MAX_RADIUS = 45;
+
+function handleStickMove(clientX, clientY) {
+  const rect = stickEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top  + rect.height / 2;
+  let dx = clientX - cx;
+  let dy = clientY - cy;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist > MAX_RADIUS) { dx *= MAX_RADIUS/dist; dy *= MAX_RADIUS/dist; }
+
+  nub.style.transform = `translate(${dx}px, ${dy}px)`;
+
+  // Normalize to [-1, 1] with a small dead-zone
+  const nx = dx / MAX_RADIUS;
+  const ny = dy / MAX_RADIUS;
+  const DEAD = 0.12;
+  gpAxes[0] = Math.abs(nx) > DEAD ? nx : 0;
+  gpAxes[1] = Math.abs(ny) > DEAD ? ny : 0;
+}
+
+function resetStick() {
+  nub.style.transform = 'translate(0px,0px)';
+  stickEl.classList.remove('active');
+  gpAxes[0] = 0;
+  gpAxes[1] = 0;
+}
+
+stickEl.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  stickTouchId = t.identifier;
+  stickEl.classList.add('active');
+  handleStickMove(t.clientX, t.clientY);
+}, { passive: false });
+
+stickEl.addEventListener('touchmove', e => {
   e.preventDefault();
   for (const t of e.changedTouches) {
-    const action = getTouchAction(t.target);
-    if (action) {
+    if (t.identifier === stickTouchId) { handleStickMove(t.clientX, t.clientY); break; }
+  }
+}, { passive: false });
+
+stickEl.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickTouchId) { stickTouchId = null; resetStick(); break; }
+  }
+});
+
+// Mouse stick
+let draggingStick = false;
+stickEl.addEventListener('mousedown', e => { draggingStick = true; stickEl.classList.add('active'); handleStickMove(e.clientX, e.clientY); });
+window.addEventListener('mousemove', e => { if (draggingStick) { e.preventDefault(); handleStickMove(e.clientX, e.clientY); } });
+window.addEventListener('mouseup', () => { if (draggingStick) { draggingStick = false; resetStick(); } });
+
+// ═══════════════════════════════════════════════════
+//  BUTTON TOUCH HANDLING (multi-touch)
+// ═══════════════════════════════════════════════════
+const touchMap = new Map();
+
+document.getElementById('controls').addEventListener('touchstart', e => {
+  if (e.target.closest('#analogStick')) return;
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    const btn = document.elementFromPoint(t.clientX, t.clientY)?.closest('[data-action]');
+    if (btn) {
+      const action = btn.dataset.action;
       touchMap.set(t.identifier, action);
       pressAction(action);
-      if (navigator.vibrate) navigator.vibrate(8);
+    }
+  }
+}, { passive: false });
+
+document.getElementById('controls').addEventListener('touchmove', e => {
+  if (e.target.closest('#analogStick')) return;
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    const newBtn = document.elementFromPoint(t.clientX, t.clientY)?.closest('[data-action]');
+    const prevAction = touchMap.get(t.identifier);
+    const newAction  = newBtn?.dataset.action;
+    if (prevAction && prevAction !== newAction) {
+      releaseAction(prevAction);
+      touchMap.delete(t.identifier);
+    }
+    if (newAction && newAction !== prevAction) {
+      touchMap.set(t.identifier, newAction);
+      pressAction(newAction);
     }
   }
 }, { passive: false });
 
 document.getElementById('controls').addEventListener('touchend', e => {
+  if (e.target.closest('#analogStick')) return;
   e.preventDefault();
   for (const t of e.changedTouches) {
     const action = touchMap.get(t.identifier);
-    if (action) {
-      touchMap.delete(t.identifier);
-      // Only release if no other touch is holding same action
-      const stillHeld = [...touchMap.values()].includes(action);
-      if (!stillHeld) releaseAction(action);
-    }
+    if (action) { touchMap.delete(t.identifier); releaseAction(action); }
   }
 }, { passive: false });
 
-document.getElementById('controls').addEventListener('touchcancel', e => {
-  for (const t of e.changedTouches) {
-    const action = touchMap.get(t.identifier);
-    if (action) {
-      touchMap.delete(t.identifier);
-      const stillHeld = [...touchMap.values()].includes(action);
-      if (!stillHeld) releaseAction(action);
-    }
-  }
-});
-
-// Mouse fallback (desktop testing)
-document.querySelectorAll('.tb[data-action]').forEach(el => {
-  el.addEventListener('mousedown', e => {
-    e.preventDefault();
-    pressAction(el.dataset.action);
-  });
-  el.addEventListener('mouseup', () => releaseAction(el.dataset.action));
-  el.addEventListener('mouseleave', () => releaseAction(el.dataset.action));
-});
-
-// ── Keyboard pass-through ────────────────────────────
-// Keyboard events from the real keyboard still flow
-// naturally — no interception needed for physical keys.
-// This ensures we don't double-fire.
-
-// Release all if window loses focus
-window.addEventListener('blur', () => {
-  Object.keys(held).forEach(a => {
-    if (held[a]) releaseAction(a);
-  });
+// Mouse click support for desktop testing
+document.querySelectorAll('[data-action]').forEach(btn => {
+  if (btn.closest('#analogStick')) return;
+  const action = btn.dataset.action;
+  btn.addEventListener('mousedown', e => { e.preventDefault(); pressAction(action); });
+  btn.addEventListener('mouseup',   () => releaseAction(action));
+  btn.addEventListener('mouseleave',() => releaseAction(action));
 });
 
 // ═══════════════════════════════════════════════════
-//  ROM LOADING
+//  KEYBOARD → GAMEPAD PASSTHROUGH (for desktop users)
+//  Maps physical keyboard to the virtual gamepad so
+//  keyboard players also benefit from the same path.
+// ═══════════════════════════════════════════════════
+const KB_MAP = {
+  'KeyX':      'A',      // X key → N64 A
+  'KeyZ':      'B',      // Z key → N64 B
+  'Enter':     'START',
+  'KeyQ':      'L',
+  'KeyE':      'R',
+  'ShiftLeft': 'Z',      // Left shift → Z trigger
+  'KeyW':      'DUP',
+  'KeyS':      'DDOWN',
+  'KeyA':      'DLEFT',
+  'KeyD':      'DRIGHT',
+  'ArrowUp':   null,     // handled via analog axes below
+  'ArrowDown': null,
+  'ArrowLeft': null,
+  'ArrowRight':null,
+  'KeyI':      'CU',
+  'KeyK':      'CD',
+  'KeyJ':      'CL',
+  'KeyL':      'CR',
+};
+
+const kbAxisState = { x: 0, y: 0 };
+window.addEventListener('keydown', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+  // Arrow keys → analog stick
+  if (e.code === 'ArrowUp')    { kbAxisState.y = -1; gpAxes[1] = -1; return; }
+  if (e.code === 'ArrowDown')  { kbAxisState.y =  1; gpAxes[1] =  1; return; }
+  if (e.code === 'ArrowLeft')  { kbAxisState.x = -1; gpAxes[0] = -1; return; }
+  if (e.code === 'ArrowRight') { kbAxisState.x =  1; gpAxes[0] =  1; return; }
+  const action = KB_MAP[e.code];
+  if (action && !e.repeat) pressAction(action);
+});
+window.addEventListener('keyup', e => {
+  if (e.code === 'ArrowUp'   || e.code === 'ArrowDown')  { kbAxisState.y = 0; gpAxes[1] = 0; return; }
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { kbAxisState.x = 0; gpAxes[0] = 0; return; }
+  const action = KB_MAP[e.code];
+  if (action) releaseAction(action);
+});
+
+// ═══════════════════════════════════════════════════
+//  EMULATOR / ROM LOADING
 // ═══════════════════════════════════════════════════
 window.Module = {
   noInitialRun: true,
-  canvas: document.getElementById('canvas'),
-  print: t => console.log('[core]', t),
-  printErr: t => console.warn('[core]', t),
-  onRuntimeInitialized() {
-    console.log('[LemonN64] Core ready');
-  }
+  canvas: canvas,
+  print:    console.log,
+  printErr: console.warn,
+  onRuntimeInitialized: function() {
+    console.log('[LemonN64] Runtime ready — injecting virtual gamepad');
+    // Ensure SDL2 game_controllers table has our pad at index 0
+    // so the core finds it when it calls SDL_NumJoysticks()
+    const tryInjectSDLGamepad = () => {
+      try {
+        const sdl2 = window.SDL2 || Module.SDL2;
+        if (!sdl2) return;
+        if (!sdl2.game_controllers) sdl2.game_controllers = {};
+        if (!sdl2.game_controllers[0]) {
+          sdl2.game_controllers[0] = {
+            axes:      Array.from(gpAxes),
+            buttons:   Array.from(gpButtons),
+            timestamp: performance.now(),
+            id: 'Xbox 360 Controller',
+          };
+          console.log('[LemonN64] SDL2 game_controllers[0] injected');
+        }
+        if (!sdl2.gamepads) sdl2.gamepads = {};
+        sdl2.gamepads[0] = buildFakeGamepad();
+      } catch(e) { console.warn('[LemonN64] SDL2 inject:', e); }
+    };
+    tryInjectSDLGamepad();
+    setTimeout(tryInjectSDLGamepad, 200);
+    // Re-fire connect event after WASM is live
+    setTimeout(fireGamepadConnected, 50);
+    setTimeout(fireGamepadConnected, 500);
+  },
 };
 
 document.getElementById('romInput').addEventListener('change', function() {
   const file = this.files[0];
   if (!file) return;
+  document.getElementById('idleHint').classList.add('hidden');
   const reader = new FileReader();
   reader.onload = ev => {
-    const data = new Uint8Array(ev.target.result);
-    if (!Module.FS) { alert('Core still loading — please wait a moment.'); return; }
     try {
+      const data = new Uint8Array(ev.target.result);
       Module.FS.writeFile('/rom.z64', data);
-      // Unlock audio context on mobile
       if (window.SDL2?.audioContext) SDL2.audioContext.resume();
+      // Re-apply resolution after core initializes (core may resize canvas)
+      setTimeout(() => setCanvasResolution(resMultiplier), 200);
       Module.callMain(['/rom.z64']);
-      Module.canvas.focus();
-      document.getElementById('idleHint').classList.add('hidden');
-    } catch(err) {
-      console.error('[ROM load]', err);
-    }
+      // Re-fire gamepad connect so core registers the pad after ROM load
+      setTimeout(fireGamepadConnected, 300);
+      setTimeout(fireGamepadConnected, 1500);
+    } catch(e) { console.error('[LemonN64] ROM load error:', e); }
   };
   reader.readAsArrayBuffer(file);
 });
 
-// Save state shortcut
-document.getElementById('btnSave').addEventListener('click', () => {
+// ═══════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════
+function toggleSettings() {
+  document.getElementById('settingsModal').classList.toggle('active');
+  renderRemapTable();
+}
+document.getElementById('btnSettings').addEventListener('click', toggleSettings);
+
+const scanlinesToggle = document.getElementById('toggleScanlines');
+scanlinesToggle.addEventListener('click', () => {
+  scanlinesToggle.classList.toggle('active');
+  document.getElementById('scanlines').classList.toggle('active');
+});
+
+document.getElementById('btnDebug').addEventListener('click', () => {
+  debugVisible = !debugVisible;
+  const el = document.getElementById('debugOverlay');
+  el.style.display = debugVisible ? 'block' : 'none';
+  if (debugVisible) updateDebug();
+});
+
+document.getElementById('btnSaveState').addEventListener('click', () => {
   if (typeof Module._cmd_save_state === 'function') Module._cmd_save_state();
+  toggleSettings();
 });
 
-// ═══════════════════════════════════════════════════
-//  SETTINGS PANEL
-// ═══════════════════════════════════════════════════
-const panel = document.getElementById('panel');
+// Continuously update debug overlay when visible
+setInterval(() => { if (debugVisible) updateDebug(); }, 100);
 
-document.getElementById('btnSettings').addEventListener('click', () => panel.classList.add('open'));
-window.closePanel = () => panel.classList.remove('open');
+// ── REMAP TABLE UI ─────────────────────────────────
+const REMAPPABLE = ['A','B','START','L','R','Z','DUP','DDOWN','DLEFT','DRIGHT'];
 
-// Close on backdrop tap
-panel.addEventListener('click', e => { if (e.target === panel) closePanel(); });
+function renderRemapTable() {
+  const table = document.getElementById('remapTable');
+  if (!table) return;
+  table.innerHTML = REMAPPABLE.map(action => {
+    const m = ACTION_MAP[action];
+    const label = m.type === 'button' ? `btn ${m.index}` : `axis ${m.index}`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border-radius:6px;padding:4px 8px;">
+      <span style="color:var(--fg)">${action}</span>
+      <button onclick="startRemap('${action}')" style="background:rgba(115,215,255,0.1);border:1px solid rgba(115,215,255,0.2);color:var(--acc);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;">${label}</button>
+    </div>`;
+  }).join('');
+}
 
-// Scanlines toggle
-document.getElementById('toggleScanlines').addEventListener('change', function() {
-  document.getElementById('scanlines').classList.toggle('on', this.checked);
-});
-
-// Keep canvas focused so keyboard input always reaches Emscripten
-document.getElementById('canvas').addEventListener('blur', () => {
-  // Don't steal focus if user is interacting with panel
-  if (!panel.classList.contains('open')) {
-    requestAnimationFrame(() => document.getElementById('canvas').focus());
-  }
-});
+function resetRemap() {
+  Object.assign(ACTION_MAP, JSON.parse(JSON.stringify(DEFAULT_MAP)));
+  try { localStorage.removeItem('lemon64_map'); } catch(_) {}
+  renderRemapTable();
+  const label = document.getElementById('remapLabel');
+  if (label) { label.textContent = '✓ Reset to defaults'; setTimeout(() => label.textContent = '', 1500); }
+}
 </script>
 
-<!-- Load the Emscripten core (plain script tag, not ES module) -->
+<!-- Load the mupen64plus_next libretro WASM core -->
 <script src="mupen64plus_next_libretro.js"></script>
-
 </body>
 </html>
