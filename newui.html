@@ -7,15 +7,15 @@
   <style>
     :root {
       --bg: #050505;
-      --acc: #73d7ff;       
+      --acc: #73d7ff;
       --acc-glow: rgba(115, 215, 255, 0.4);
       --glass: rgba(255, 255, 255, 0.06);
       --glass-border: rgba(255, 255, 255, 0.1);
       --text-muted: rgba(255, 255, 255, 0.4);
       --fg: #e8f0ff;
-      --c-btn: #f0bd00;     
-      --a-btn: #4969e6;     
-      --b-btn: #2aa850;     
+      --c-btn: #f0bd00;
+      --a-btn: #4969e6;
+      --b-btn: #2aa850;
       --radius-md: 16px;
       --radius-lg: 24px;
     }
@@ -34,7 +34,6 @@
       flex-direction: column;
     }
 
-    /* ─── TOP BAR ─────────────────────────────────── */
     .top-bar {
       display: flex;
       justify-content: space-between;
@@ -57,7 +56,6 @@
     .icon-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.15); color: #fff; }
     input[type="file"] { display: none; }
 
-    /* ─── SCREEN AREA ────────────────────────────── */
     .game-container {
       flex: 1;
       display: flex;
@@ -65,7 +63,7 @@
       justify-content: center;
       position: relative;
       padding: 0 16px;
-      max-height: 45vh; 
+      max-height: 45vh;
       z-index: 10;
     }
 
@@ -85,16 +83,20 @@
       justify-content: center;
     }
 
+    /*
+     * RESOLUTION FIX:
+     * The canvas PIXEL dimensions are set in JS to 640x480 (or 1280x960 for HiDPI).
+     * CSS stretches it to fill the container — this gives sharp, full-resolution output.
+     * Do NOT set width/height in CSS to pixel values; use 100%/auto for scaling.
+     */
     canvas {
       width: 100%;
       height: 100%;
       display: block;
-      /* N64 looks better with smooth scaling (bilinear) rather than pixelated */
-      image-rendering: auto; 
+      image-rendering: auto;
       object-fit: contain;
     }
 
-    /* CRT Scanlines */
     .scanlines {
       position: absolute; inset: 0;
       background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
@@ -113,7 +115,6 @@
     }
     .idle-hint.hidden { opacity: 0; }
 
-    /* ─── CONTROLS LAYOUT ────────────────────────── */
     .controls-area {
       flex: 0 0 auto;
       height: 45vh;
@@ -146,7 +147,6 @@
       box-shadow: 0 0 15px rgba(255,255,255,0.1);
     }
 
-    /* ── LEFT GROUP ── */
     .group-left {
       display: flex; flex-direction: column;
       align-items: center; justify-content: space-between;
@@ -204,7 +204,6 @@
       background: var(--glass); pointer-events: none;
     }
 
-    /* ── CENTER GROUP ── */
     .group-center {
       display: flex; align-items: flex-end; justify-content: center;
       padding-bottom: 30px;
@@ -216,13 +215,12 @@
       letter-spacing: 1px;
     }
 
-    /* ── RIGHT GROUP ── */
     .group-right {
       display: flex; flex-direction: column;
       align-items: center; justify-content: space-between;
     }
     .btn-r { width: 60px; height: 32px; border-radius: 16px; font-size: 12px; font-weight: 700; }
-    
+
     .actions-grid {
       position: relative;
       width: 100%; height: 100%;
@@ -270,8 +268,6 @@
     }
     .btn-b.pressed { background: var(--b-btn); color: #fff; border-color: var(--b-btn); }
 
-
-    /* ─── SETTINGS PANEL ──────────────────────────── */
     .settings-modal {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
@@ -285,7 +281,7 @@
     }
     .settings-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--fg); display: flex; justify-content: space-between;}
     .close-tag { opacity: 0.5; cursor: pointer; }
-    
+
     .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .toggle {
       width: 44px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 12px; position: relative; cursor: pointer; transition: 0.2s;
@@ -296,11 +292,10 @@
     .toggle.active { background: var(--acc); }
     .toggle.active::after { transform: translateX(20px); }
 
-    /* ─── LANDSCAPE ───────────────────── */
     @media (orientation: landscape) {
       body { flex-direction: row; }
       .top-bar { display: none; }
-      
+
       .game-container {
         height: 100vh; max-height: 100vh;
         width: 100%;
@@ -315,7 +310,7 @@
         aspect-ratio: auto;
         width: 100%;
       }
-      
+
       .controls-area {
         height: 100vh; width: 100vw; max-height: 100vh;
         position: absolute; inset: 0; pointer-events: none;
@@ -325,15 +320,15 @@
         order: 2;
       }
       .controls-area > * { pointer-events: auto; }
-      
+
       .group-left { position: absolute; bottom: 30px; left: 40px; align-items: flex-start; }
       .group-center { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
       .group-right { position: absolute; bottom: 30px; right: 40px; align-items: flex-end; }
-      
+
       .shoulder-row { width: auto; gap: 15px; margin-bottom: 20px; }
       .analog-area { width: 160px; height: 160px; margin-bottom: 20px; }
       .dpad { display: none; }
-      
+
       .c-group { top: -90px; right: 10px; }
       .ab-group { bottom: 0; right: 0; }
     }
@@ -347,7 +342,7 @@
       <input type="file" id="romInput" accept=".z64,.n64,.v64,.zip,application/octet-stream">
     </label>
     <div class="icon-btn" id="btnSettings" title="Settings">
-      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 01 2-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 01 2.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     </div>
   </div>
 
@@ -355,7 +350,10 @@
     <div class="screen-wrapper">
       <canvas id="canvas" tabindex="1"></canvas>
       <div class="scanlines" id="scanlines"></div>
-      
+      <div class="idle-hint" id="idleHint">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:12px;opacity:0.3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        LOAD A ROM TO PLAY
+      </div>
     </div>
   </div>
 
@@ -371,10 +369,10 @@
       </div>
       <div class="dpad">
         <div class="dpad-center"></div>
-        <div class="touch-btn dpad-btn up" data-action="UP"></div>
-        <div class="touch-btn dpad-btn down" data-action="DOWN"></div>
-        <div class="touch-btn dpad-btn left" data-action="LEFT"></div>
-        <div class="touch-btn dpad-btn right" data-action="RIGHT"></div>
+        <div class="touch-btn dpad-btn up" data-action="DUP"></div>
+        <div class="touch-btn dpad-btn down" data-action="DDOWN"></div>
+        <div class="touch-btn dpad-btn left" data-action="DLEFT"></div>
+        <div class="touch-btn dpad-btn right" data-action="DRIGHT"></div>
       </div>
     </div>
     <div class="group-center">
@@ -386,10 +384,10 @@
       </div>
       <div class="actions-grid">
         <div class="c-group">
-          <div class="touch-btn btn-c c-up" data-action="CU">C</div>
-          <div class="touch-btn btn-c c-down" data-action="CD">C</div>
-          <div class="touch-btn btn-c c-left" data-action="CL">C</div>
-          <div class="touch-btn btn-c c-right" data-action="CR">C</div>
+          <div class="touch-btn btn-c c-up" data-action="CU">C▲</div>
+          <div class="touch-btn btn-c c-down" data-action="CD">C▼</div>
+          <div class="touch-btn btn-c c-left" data-action="CL">C◀</div>
+          <div class="touch-btn btn-c c-right" data-action="CR">C▶</div>
         </div>
         <div class="ab-group">
           <div class="touch-btn btn-circle btn-b" data-action="B">B</div>
@@ -410,6 +408,14 @@
         <div class="toggle" id="toggleScanlines"></div>
       </div>
       <div class="setting-row">
+        <span>Resolution</span>
+        <select id="resSelect" style="background:#222;color:#fff;border:1px solid #333;border-radius:8px;padding:4px 8px;font-size:12px;">
+          <option value="1">640×480 (Native)</option>
+          <option value="2" selected>1280×960 (2×)</option>
+          <option value="3">1920×1440 (3×)</option>
+        </select>
+      </div>
+      <div class="setting-row">
         <span>Save State</span>
         <button class="touch-btn" style="padding: 4px 12px; border-radius: 8px; font-size:12px;" id="btnSaveState">Save</button>
       </div>
@@ -418,182 +424,240 @@
 
 <script>
 // ═══════════════════════════════════════════════════
-//  INPUT MAPPING CONFIGURATION
+//  CANVAS RESOLUTION FIX
+//  Set the canvas pixel buffer to the actual N64 output
+//  resolution. The CSS will scale it to fit the container.
+//  The libretro core respects Module.canvas width/height.
 // ═══════════════════════════════════════════════════
-// FIX: Swapped Analog Stick to WASD and D-Pad to Arrow Keys.
-// This is because most Libretro/Emscripten cores map D-Pad to Arrow Keys by default.
-// If your core uses a different mapping, edit these keyCode values.
+const canvas = document.getElementById('canvas');
+let resMultiplier = 2; // Default 2× (1280×960)
 
-const BINDINGS = {
-  // D-PAD (Mapped to Arrow Keys)
-  UP:    { key: 'ArrowUp',    keyCode: 38, code: 'ArrowUp' },
-  DOWN:  { key: 'ArrowDown',  keyCode: 40, code: 'ArrowDown' },
-  LEFT:  { key: 'ArrowLeft',  keyCode: 37, code: 'ArrowLeft' },
-  RIGHT: { key: 'ArrowRight', keyCode: 39, code: 'ArrowRight' },
+function setCanvasResolution(mult) {
+  resMultiplier = mult;
+  canvas.width  = 640 * mult;
+  canvas.height = 480 * mult;
+}
+setCanvasResolution(resMultiplier);
 
-  // ANALOG STICK (Mapped to WASD for "Digital to Analog" fallback)
-  // Note: True analog requires the core to support the Gamepad API directly.
-  STICK_UP:    { key: 'w', keyCode: 87, code: 'KeyW' },
-  STICK_DOWN:  { key: 's', keyCode: 83, code: 'KeyS' },
-  STICK_LEFT:  { key: 'a', keyCode: 65, code: 'KeyA' },
-  STICK_RIGHT: { key: 'd', keyCode: 68, code: 'KeyD' },
+document.getElementById('resSelect').addEventListener('change', function() {
+  setCanvasResolution(parseInt(this.value));
+});
 
-  // ACTIONS
-  A:     { key: 'x',     keyCode: 88, code: 'KeyX' },  // X is often A
-  B:     { key: 'c',     keyCode: 67, code: 'KeyC' },  // C is often B
-  L:     { key: 'q',     keyCode: 81, code: 'KeyQ' },
-  R:     { key: 'e',     keyCode: 69, code: 'KeyE' },
-  Z:     { key: 'z',     keyCode: 90, code: 'KeyZ' },  // Z Trigger
-  START: { key: 'Enter', keyCode: 13, code: 'Enter' },
+// ═══════════════════════════════════════════════════
+//  VIRTUAL GAMEPAD — THE CORE FIX
+//
+//  Libretro/RetroArch WASM cores use navigator.getGamepads()
+//  to read input. They do NOT read keyboard events at all
+//  (unless you configure a keyboard-to-gamepad mapping in
+//  the core, which is not standard).
+//
+//  The fix: intercept navigator.getGamepads() and return a
+//  fake Gamepad object that we control from touch/mouse input.
+//
+//  RETROPAD BUTTON INDEX MAP (Standard Libretro layout):
+//   0  = B         (South / Cross)
+//   1  = Y         (West / Square)  — N64: unused / mapped as needed
+//   2  = Select
+//   3  = Start
+//   4  = D-Up
+//   5  = D-Down
+//   6  = D-Left
+//   7  = D-Right
+//   8  = A         (East / Circle)
+//   9  = X         (North / Triangle) — N64: unused / mapped as needed
+//  10  = L
+//  11  = R
+//  12  = L2 / Z trigger
+//  13  = R2
+//  14  = L3
+//  15  = R3
+//
+//  AXES (standard):
+//   0 = Left stick X  (-1=left, +1=right)
+//   1 = Left stick Y  (-1=up,   +1=down)
+//   2 = Right stick X (C-buttons L/R)
+//   3 = Right stick Y (C-buttons U/D)
+//
+//  mupen64plus_next maps:
+//    RetroPad B       → N64 A button
+//    RetroPad Y       → N64 B button
+//    RetroPad Start   → N64 Start
+//    RetroPad D-pad   → N64 D-pad
+//    RetroPad A       → N64 C-Down (alternate)
+//    RetroPad L       → N64 L shoulder
+//    RetroPad R       → N64 R shoulder
+//    RetroPad L2      → N64 Z trigger
+//    Left  stick      → N64 Analog stick
+//    Right stick      → N64 C-buttons (analog)
+// ═══════════════════════════════════════════════════
 
-  // C-BUTTONS (Mapped to IJKL)
-  CU:    { key: 'i', keyCode: 73, code: 'KeyI' },
-  CD:    { key: 'k', keyCode: 75, code: 'KeyK' },
-  CL:    { key: 'j', keyCode: 74, code: 'KeyJ' },
-  CR:    { key: 'l', keyCode: 76, code: 'KeyL' },
+const NUM_BUTTONS = 16;
+const NUM_AXES    = 4;
+
+// Internal state arrays
+const gpButtons = new Array(NUM_BUTTONS).fill(0);
+const gpAxes    = new Array(NUM_AXES).fill(0);
+
+// Action → gamepad button/axis mapping
+// Format: { type: 'button', index } or { type: 'axis', index, value }
+const ACTION_MAP = {
+  // Face buttons
+  A:      { type: 'button', index: 0  },  // RetroPad B  → N64 A
+  B:      { type: 'button', index: 1  },  // RetroPad Y  → N64 B
+  START:  { type: 'button', index: 3  },  // RetroPad Start
+  // Shoulders
+  L:      { type: 'button', index: 10 },  // L
+  R:      { type: 'button', index: 11 },  // R
+  Z:      { type: 'button', index: 12 },  // L2 = Z trigger
+  // D-Pad
+  DUP:    { type: 'button', index: 4  },
+  DDOWN:  { type: 'button', index: 5  },
+  DLEFT:  { type: 'button', index: 6  },
+  DRIGHT: { type: 'button', index: 7  },
+  // C-buttons via right stick axes
+  CU:     { type: 'axis', index: 3, value: -1 },
+  CD:     { type: 'axis', index: 3, value:  1 },
+  CL:     { type: 'axis', index: 2, value: -1 },
+  CR:     { type: 'axis', index: 2, value:  1 },
 };
 
-const held = {};
-
-function fireKey(action, type) {
-  const b = BINDINGS[action];
-  if (!b) return;
-  
-  const opts = {
-    key: b.key, 
-    code: b.code,
-    keyCode: b.keyCode, 
-    which: b.keyCode,
-    bubbles: true, 
-    cancelable: true,
-    view: window
-  };
-  
-  const ev = new KeyboardEvent(type, opts);
-  window.dispatchEvent(ev);
-  
-  const cvs = document.getElementById('canvas');
-  if (cvs) cvs.dispatchEvent(new KeyboardEvent(type, opts));
-}
+// Axis state for C-buttons (track which directions are held)
+const axisHeld = { 2: {'-1':false,'1':false}, 3: {'-1':false,'1':false} };
 
 function pressAction(action) {
-  if (held[action]) return;
-  held[action] = true;
-  // Visual feedback
-  const els = document.querySelectorAll(`[data-action="${action}"]`);
-  els.forEach(el => {
+  const m = ACTION_MAP[action];
+  if (!m) return;
+  if (m.type === 'button') {
+    gpButtons[m.index] = 1;
+  } else {
+    axisHeld[m.index][String(m.value)] = true;
+    updateAxis(m.index);
+  }
+  // Visual
+  document.querySelectorAll(`[data-action="${action}"]`).forEach(el => {
     el.classList.add('pressed');
-    if (navigator.vibrate) navigator.vibrate(10);
   });
-  fireKey(action, 'keydown');
+  if (navigator.vibrate) navigator.vibrate(10);
 }
 
 function releaseAction(action) {
-  if (!held[action]) return;
-  held[action] = false;
-  const els = document.querySelectorAll(`[data-action="${action}"]`);
-  els.forEach(el => el.classList.remove('pressed'));
-  fireKey(action, 'keyup');
+  const m = ACTION_MAP[action];
+  if (!m) return;
+  if (m.type === 'button') {
+    gpButtons[m.index] = 0;
+  } else {
+    axisHeld[m.index][String(m.value)] = false;
+    updateAxis(m.index);
+  }
+  document.querySelectorAll(`[data-action="${action}"]`).forEach(el => {
+    el.classList.remove('pressed');
+  });
 }
 
+function updateAxis(axisIndex) {
+  const neg = axisHeld[axisIndex]['-1'];
+  const pos = axisHeld[axisIndex]['1'];
+  gpAxes[axisIndex] = neg && pos ? 0 : neg ? -1 : pos ? 1 : 0;
+}
+
+// Build the fake Gamepad object
+function buildFakeGamepad() {
+  return {
+    id: 'Virtual N64 Controller (LemonN64)',
+    index: 0,
+    connected: true,
+    timestamp: performance.now(),
+    mapping: 'standard',
+    axes: gpAxes.slice(),   // snapshot
+    buttons: gpButtons.map(v => ({ pressed: v > 0.5, touched: v > 0.5, value: v })),
+  };
+}
+
+// Override navigator.getGamepads
+const _origGetGamepads = navigator.getGamepads.bind(navigator);
+Object.defineProperty(navigator, 'getGamepads', {
+  value: function() {
+    // Return our virtual pad at slot 0; fill rest with nulls
+    const real = _origGetGamepads() || [];
+    const result = [buildFakeGamepad(), real[1] || null, real[2] || null, real[3] || null];
+    return result;
+  },
+  writable: true,
+  configurable: true,
+});
+
+// Fire a synthetic gamepadconnected event so the core registers the pad
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const ev = new Event('gamepadconnected');
+    ev.gamepad = buildFakeGamepad();
+    window.dispatchEvent(ev);
+  }, 500);
+});
+
 // ═══════════════════════════════════════════════════
-//  ANALOG STICK LOGIC
+//  ANALOG STICK — maps to axes[0] (X) and axes[1] (Y)
 // ═══════════════════════════════════════════════════
-const stick = document.getElementById('analogStick');
-const nub = stick.querySelector('.stick-nub');
+const stickEl = document.getElementById('analogStick');
+const nub = stickEl.querySelector('.stick-nub');
 let stickTouchId = null;
-const MAX_RADIUS = 35; // px
+const MAX_RADIUS = 45;
 
 function handleStickMove(clientX, clientY) {
-  const rect = stick.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  
-  let dx = clientX - centerX;
-  let dy = clientY - centerY;
+  const rect = stickEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top  + rect.height / 2;
+  let dx = clientX - cx;
+  let dy = clientY - cy;
   const dist = Math.sqrt(dx*dx + dy*dy);
-  
-  // Clamp
-  if (dist > MAX_RADIUS) {
-    const ratio = MAX_RADIUS / dist;
-    dx *= ratio;
-    dy *= ratio;
-  }
-  
-  // Update UI
+  if (dist > MAX_RADIUS) { dx *= MAX_RADIUS/dist; dy *= MAX_RADIUS/dist; }
+
   nub.style.transform = `translate(${dx}px, ${dy}px)`;
-  
-  // Normalize
-  const normX = dx / MAX_RADIUS;
-  const normY = dy / MAX_RADIUS;
-  const THRESHOLD = 0.3; // Lower threshold for responsiveness
-  
-  // Map Stick UI to WASD (STICK_ keys)
-  if (normY < -THRESHOLD) pressAction('STICK_UP'); else releaseAction('STICK_UP');
-  if (normY > THRESHOLD)  pressAction('STICK_DOWN'); else releaseAction('STICK_DOWN');
-  if (normX < -THRESHOLD) pressAction('STICK_LEFT'); else releaseAction('STICK_LEFT');
-  if (normX > THRESHOLD)  pressAction('STICK_RIGHT'); else releaseAction('STICK_RIGHT');
+
+  // Normalize to [-1, 1] with a small dead-zone
+  const nx = dx / MAX_RADIUS;
+  const ny = dy / MAX_RADIUS;
+  const DEAD = 0.12;
+  gpAxes[0] = Math.abs(nx) > DEAD ? nx : 0;
+  gpAxes[1] = Math.abs(ny) > DEAD ? ny : 0;
 }
 
 function resetStick() {
-  nub.style.transform = `translate(0px, 0px)`;
-  stick.classList.remove('active');
-  releaseAction('STICK_UP');
-  releaseAction('STICK_DOWN');
-  releaseAction('STICK_LEFT');
-  releaseAction('STICK_RIGHT');
+  nub.style.transform = 'translate(0px,0px)';
+  stickEl.classList.remove('active');
+  gpAxes[0] = 0;
+  gpAxes[1] = 0;
 }
 
-stick.addEventListener('touchstart', e => {
+stickEl.addEventListener('touchstart', e => {
   e.preventDefault();
-  const touch = e.changedTouches[0];
-  stickTouchId = touch.identifier;
-  stick.classList.add('active');
-  handleStickMove(touch.clientX, touch.clientY);
-}, {passive: false});
+  const t = e.changedTouches[0];
+  stickTouchId = t.identifier;
+  stickEl.classList.add('active');
+  handleStickMove(t.clientX, t.clientY);
+}, { passive: false });
 
-stick.addEventListener('touchmove', e => {
+stickEl.addEventListener('touchmove', e => {
   e.preventDefault();
-  for (let i=0; i<e.changedTouches.length; i++) {
-    if (e.changedTouches[i].identifier === stickTouchId) {
-      handleStickMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
-      break;
-    }
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickTouchId) { handleStickMove(t.clientX, t.clientY); break; }
   }
-}, {passive: false});
+}, { passive: false });
 
-stick.addEventListener('touchend', e => {
-  for (let i=0; i<e.changedTouches.length; i++) {
-    if (e.changedTouches[i].identifier === stickTouchId) {
-      stickTouchId = null;
-      resetStick();
-      break;
-    }
+stickEl.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickTouchId) { stickTouchId = null; resetStick(); break; }
   }
 });
 
-// Mouse Stick Support
-let isDraggingStick = false;
-stick.addEventListener('mousedown', e => {
-  isDraggingStick = true;
-  stick.classList.add('active');
-  handleStickMove(e.clientX, e.clientY);
-});
-window.addEventListener('mousemove', e => {
-  if (isDraggingStick) {
-    e.preventDefault();
-    handleStickMove(e.clientX, e.clientY);
-  }
-});
-window.addEventListener('mouseup', () => {
-  if (isDraggingStick) {
-    isDraggingStick = false;
-    resetStick();
-  }
-});
+// Mouse stick
+let draggingStick = false;
+stickEl.addEventListener('mousedown', e => { draggingStick = true; stickEl.classList.add('active'); handleStickMove(e.clientX, e.clientY); });
+window.addEventListener('mousemove', e => { if (draggingStick) { e.preventDefault(); handleStickMove(e.clientX, e.clientY); } });
+window.addEventListener('mouseup', () => { if (draggingStick) { draggingStick = false; resetStick(); } });
 
 // ═══════════════════════════════════════════════════
-//  GENERAL BUTTON TOUCH HANDLING
+//  BUTTON TOUCH HANDLING (multi-touch)
 // ═══════════════════════════════════════════════════
 const touchMap = new Map();
 
@@ -608,84 +672,142 @@ document.getElementById('controls').addEventListener('touchstart', e => {
       pressAction(action);
     }
   }
-}, {passive: false});
+}, { passive: false });
+
+document.getElementById('controls').addEventListener('touchmove', e => {
+  if (e.target.closest('#analogStick')) return;
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    const newBtn = document.elementFromPoint(t.clientX, t.clientY)?.closest('[data-action]');
+    const prevAction = touchMap.get(t.identifier);
+    const newAction  = newBtn?.dataset.action;
+    if (prevAction && prevAction !== newAction) {
+      releaseAction(prevAction);
+      touchMap.delete(t.identifier);
+    }
+    if (newAction && newAction !== prevAction) {
+      touchMap.set(t.identifier, newAction);
+      pressAction(newAction);
+    }
+  }
+}, { passive: false });
 
 document.getElementById('controls').addEventListener('touchend', e => {
   if (e.target.closest('#analogStick')) return;
   e.preventDefault();
   for (const t of e.changedTouches) {
     const action = touchMap.get(t.identifier);
-    if (action) {
-      touchMap.delete(t.identifier);
-      releaseAction(action);
-    }
+    if (action) { touchMap.delete(t.identifier); releaseAction(action); }
   }
-}, {passive: false});
+}, { passive: false });
 
-// Desktop Mouse Click Support
+// Mouse click support for desktop testing
 document.querySelectorAll('[data-action]').forEach(btn => {
   if (btn.closest('#analogStick')) return;
   const action = btn.dataset.action;
-  btn.addEventListener('mousedown', () => pressAction(action));
-  btn.addEventListener('mouseup', () => releaseAction(action));
-  btn.addEventListener('mouseleave', () => releaseAction(action));
+  btn.addEventListener('mousedown', e => { e.preventDefault(); pressAction(action); });
+  btn.addEventListener('mouseup',   () => releaseAction(action));
+  btn.addEventListener('mouseleave',() => releaseAction(action));
 });
 
 // ═══════════════════════════════════════════════════
-//  EMULATOR LOGIC
+//  KEYBOARD → GAMEPAD PASSTHROUGH (for desktop users)
+//  Maps physical keyboard to the virtual gamepad so
+//  keyboard players also benefit from the same path.
+// ═══════════════════════════════════════════════════
+const KB_MAP = {
+  'KeyX':      'A',      // X key → N64 A
+  'KeyZ':      'B',      // Z key → N64 B
+  'Enter':     'START',
+  'KeyQ':      'L',
+  'KeyE':      'R',
+  'ShiftLeft': 'Z',      // Left shift → Z trigger
+  'KeyW':      'DUP',
+  'KeyS':      'DDOWN',
+  'KeyA':      'DLEFT',
+  'KeyD':      'DRIGHT',
+  'ArrowUp':   null,     // handled via analog axes below
+  'ArrowDown': null,
+  'ArrowLeft': null,
+  'ArrowRight':null,
+  'KeyI':      'CU',
+  'KeyK':      'CD',
+  'KeyJ':      'CL',
+  'KeyL':      'CR',
+};
+
+const kbAxisState = { x: 0, y: 0 };
+window.addEventListener('keydown', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+  // Arrow keys → analog stick
+  if (e.code === 'ArrowUp')    { kbAxisState.y = -1; gpAxes[1] = -1; return; }
+  if (e.code === 'ArrowDown')  { kbAxisState.y =  1; gpAxes[1] =  1; return; }
+  if (e.code === 'ArrowLeft')  { kbAxisState.x = -1; gpAxes[0] = -1; return; }
+  if (e.code === 'ArrowRight') { kbAxisState.x =  1; gpAxes[0] =  1; return; }
+  const action = KB_MAP[e.code];
+  if (action && !e.repeat) pressAction(action);
+});
+window.addEventListener('keyup', e => {
+  if (e.code === 'ArrowUp'   || e.code === 'ArrowDown')  { kbAxisState.y = 0; gpAxes[1] = 0; return; }
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { kbAxisState.x = 0; gpAxes[0] = 0; return; }
+  const action = KB_MAP[e.code];
+  if (action) releaseAction(action);
+});
+
+// ═══════════════════════════════════════════════════
+//  EMULATOR / ROM LOADING
 // ═══════════════════════════════════════════════════
 window.Module = {
   noInitialRun: true,
-  canvas: document.getElementById('canvas'),
-  print: console.log,
-  printErr: console.warn
+  canvas: canvas,
+  print:    console.log,
+  printErr: console.warn,
+  // Tell Emscripten the canvas is already the right size
+  // so it doesn't override our resolution settings.
+  onRuntimeInitialized: function() {
+    console.log('[LemonN64] Runtime ready');
+  },
 };
 
-const romInput = document.getElementById('romInput');
-romInput.addEventListener('change', function() {
+document.getElementById('romInput').addEventListener('change', function() {
   const file = this.files[0];
   if (!file) return;
+  document.getElementById('idleHint').classList.add('hidden');
   const reader = new FileReader();
-  reader.onload = function(ev) {
-    const data = new Uint8Array(ev.target.result);
+  reader.onload = ev => {
     try {
+      const data = new Uint8Array(ev.target.result);
       Module.FS.writeFile('/rom.z64', data);
       if (window.SDL2?.audioContext) SDL2.audioContext.resume();
+      // Re-apply resolution after core initializes (core may resize canvas)
+      setTimeout(() => setCanvasResolution(resMultiplier), 200);
       Module.callMain(['/rom.z64']);
-      document.getElementById('idleHint').classList.add('hidden');
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error('[LemonN64] ROM load error:', e); }
   };
   reader.readAsArrayBuffer(file);
 });
 
-// Settings Logic
-const settingsModal = document.getElementById('settingsModal');
-const scanlinesToggle = document.getElementById('toggleScanlines');
-const scanlinesEl = document.getElementById('scanlines');
-
+// ═══════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════
 function toggleSettings() {
-  settingsModal.classList.toggle('active');
+  document.getElementById('settingsModal').classList.toggle('active');
 }
 document.getElementById('btnSettings').addEventListener('click', toggleSettings);
 
+const scanlinesToggle = document.getElementById('toggleScanlines');
 scanlinesToggle.addEventListener('click', () => {
   scanlinesToggle.classList.toggle('active');
-  scanlinesEl.classList.toggle('active');
+  document.getElementById('scanlines').classList.toggle('active');
 });
 
 document.getElementById('btnSaveState').addEventListener('click', () => {
   if (typeof Module._cmd_save_state === 'function') Module._cmd_save_state();
   toggleSettings();
 });
-
-// Prevent default browser scrolling when using keyboard
-window.addEventListener('keydown', e => {
-  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) {
-    e.preventDefault();
-  }
-});
-
 </script>
+
+<!-- Load the mupen64plus_next libretro WASM core -->
 <script src="mupen64plus_next_libretro.js"></script>
 </body>
 </html>
