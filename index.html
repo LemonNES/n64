@@ -508,6 +508,13 @@
         <span class="close-tag" onclick="toggleSettings()">×</span>
       </div>
       <div class="setting-row">
+        <span>Core</span>
+        <select id="coreSelect" style="background:#222;color:#fff;border:1px solid #333;border-radius:8px;padding:4px 8px;font-size:12px;">
+          <option value="mupen64plus_next_libretro" selected>mupen64plus_next</option>
+          <option value="parallel_n64_libretro">parallel_n64</option>
+        </select>
+      </div>
+      <div class="setting-row">
         <span>Scanlines</span>
         <div class="toggle" id="toggleScanlines"></div>
       </div>
@@ -950,8 +957,27 @@ document.getElementById('romInput').addEventListener('change', function() {
 });
 
 // ═══════════════════════════════════════════════════
-//  SETTINGS
+//  CORE SWITCHING
+//  Dynamically loads the selected libretro WASM core.
+//  The page must reload to reinitialize Module cleanly.
 // ═══════════════════════════════════════════════════
+let selectedCore = localStorage.getItem('lemon_core') || 'mupen64plus_next_libretro';
+
+// Set the selector to the saved value on load
+const coreSelect = document.getElementById('coreSelect');
+coreSelect.value = selectedCore;
+
+coreSelect.addEventListener('change', function() {
+  const newCore = this.value;
+  if (newCore === selectedCore) return;
+  selectedCore = newCore;
+  localStorage.setItem('lemon_core', newCore);
+  // Show feedback and reload so the new core script loads cleanly
+  this.parentElement.querySelector('span').textContent = 'Core (reloading…)';
+  setTimeout(() => location.reload(), 400);
+});
+
+
 function toggleSettings() {
   document.getElementById('settingsModal').classList.toggle('active');
 }
@@ -984,7 +1010,15 @@ btnB.addEventListener('touchend',   e => { e.preventDefault(); e.stopPropagation
 setInterval(() => { if (debugVisible) updateDebug(); }, 100);
 </script>
 
-<!-- Load the mupen64plus_next libretro WASM core -->
-<script src="mupen64plus_next_libretro.js"></script>
+<!-- Dynamically load the selected libretro WASM core -->
+<script>
+  (function() {
+    const core = localStorage.getItem('lemon_core') || 'mupen64plus_next_libretro';
+    const s = document.createElement('script');
+    s.src = core + '.js';
+    s.onerror = () => console.error('[LemonN64] Failed to load core:', s.src);
+    document.body.appendChild(s);
+  })();
+</script>
 </body>
 </html>
