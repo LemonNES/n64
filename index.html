@@ -125,7 +125,7 @@
        Floor of 6px ensures buttons are always finger-sized on phones.
     ── */
     :root {
-      --s: clamp(8px, 2.6vw, 10px);
+      --s: clamp(7px, 2.0vw, 10px);
     }
 
     .controls-area {
@@ -164,7 +164,7 @@
     .group-left {
       display: flex; flex-direction: column;
       align-items: center; justify-content: flex-end;
-      gap: calc(var(--s) * 1);
+      gap: calc(var(--s) * 0.5);
     }
     .stick-dpad-row {
       display: flex; flex-direction: row;
@@ -186,7 +186,7 @@
     /* Analog stick */
     .analog-area {
       position: relative;
-      width: calc(var(--s) * 13); height: calc(var(--s) * 13);
+      width: calc(var(--s) * 12); height: calc(var(--s) * 12);
       flex-shrink: 0;
     }
     .stick-base {
@@ -262,8 +262,8 @@
     .group-right {
       display: flex; flex-direction: column;
       align-items: flex-end; justify-content: flex-end;
-      gap: calc(var(--s) * 0.8);
-      margin-right: calc(var(--s) * 1.5);
+      gap: calc(var(--s) * 0.5);
+      margin-right: calc(var(--s) * 4);
     }
     .btn-r {
       width: calc(var(--s) * 7); height: calc(var(--s) * 3.2);
@@ -280,12 +280,12 @@
     /* ── C BUTTONS ── */
     .c-group {
       position: relative;
-      width: calc(var(--s) * 10); height: calc(var(--s) * 10);
+      width: calc(var(--s) * 9); height: calc(var(--s) * 9);
       flex-shrink: 0;
     }
     .btn-c {
       position: absolute;
-      width: calc(var(--s) * 3.2); height: calc(var(--s) * 3.2);
+      width: calc(var(--s) * 2.9); height: calc(var(--s) * 2.9);
       border-radius: 50%;
       font-size: calc(var(--s) * 0.9); font-weight: 700;
       color: var(--c-btn); border-color: rgba(240, 189, 0, 0.25);
@@ -297,15 +297,15 @@
       color: var(--c-btn);
       transform: scale(0.92);
     }
-    .c-up    { top: 0;                      left: calc(var(--s) * 3.4); }
-    .c-down  { bottom: 0;                   left: calc(var(--s) * 3.4); }
-    .c-left  { top: calc(var(--s) * 3.4); left: 0; }
-    .c-right { top: calc(var(--s) * 3.4); right: 0; }
+    .c-up    { top: 0;                      left: calc(var(--s) * 3.05); }
+    .c-down  { bottom: 0;                   left: calc(var(--s) * 3.05); }
+    .c-left  { top: calc(var(--s) * 3.05); left: 0; }
+    .c-right { top: calc(var(--s) * 3.05); right: 0; }
 
     /* ── A / B BUTTONS (NES circle style with acc glow) ── */
     .ab-group {
       position: relative;
-      width: calc(var(--s) * 12); height: calc(var(--s) * 11);
+      width: calc(var(--s) * 11); height: calc(var(--s) * 10);
       flex-shrink: 0;
     }
     .btn-circle {
@@ -316,8 +316,8 @@
       box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
     }
     .btn-a {
-      width: calc(var(--s) * 6); height: calc(var(--s) * 6);
-      bottom: calc(var(--s) * 2.5); right: 0;
+      width: calc(var(--s) * 5.5); height: calc(var(--s) * 5.5);
+      bottom: calc(var(--s) * 2); right: 0;
       border-color: rgba(73, 105, 230, 0.3);
       z-index: 1;
     }
@@ -329,7 +329,7 @@
       transform: scale(0.92);
     }
     .btn-b {
-      width: calc(var(--s) * 5); height: calc(var(--s) * 5);
+      width: calc(var(--s) * 4.5); height: calc(var(--s) * 4.5);
       bottom: 0; left: 0;
       border-color: rgba(42, 168, 80, 0.3);
       z-index: 1;
